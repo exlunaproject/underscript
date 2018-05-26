@@ -62,7 +62,7 @@ For compiling Underscript, you will need [Catarinka](https://github.com/felipeda
  
 There is no need to install third-party components in the IDE - you can just add the dependencies listed above to the library path and hit compile. It currently compiles under D7 and possibly Lazarus with adaptations.
 
-A XE-compatible version is still a work in progress and not available at the moment. We also would love to see a C++ port of this library.
+A XE-compatible version is still a work in progress and not available at the moment. We also would love to see a C port of this library.
 
 ## License & Credits
 
