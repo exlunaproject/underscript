@@ -36,7 +36,7 @@ const
 
 implementation
 
-function TScarlettActiveScript.RunExpression(s: string): string; 
+function TScarlettActiveScript.RunExpression(s: string): string;
 begin
   asw_success := true;
   errors.clear;

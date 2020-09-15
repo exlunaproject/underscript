@@ -47,13 +47,23 @@ const
   SCATID_ActiveScript =               '{F0B7A1A1-9847-11cf-8F20-00805F2CD064}';
   SCATID_ActiveScriptParse =          '{F0B7A1A2-9847-11cf-8F20-00805F2CD064}';
   SID_IActiveScript =                 '{BB1A2AE1-A4F9-11cf-8F20-00805F2CD064}';
+  // Syhunt: IActiveScriptParse has different CLSID depending on architecture
+  // ref: https://github.com/microsoft/VS-Macros/tree/master/ExecutionEngine/ActiveScript%20Interfaces
+  {$IFDEF WIN64}
+  SID_IActiveScriptParse =            '{C7EF7658-E1EE-480E-97EA-D52CB4D76D17}';
+  SID_IActiveScriptParseProcedureOld ='{21F57128-08C9-4638-BA12-22D15D88DC5C}';
+  SID_IActiveScriptParseProcedure =   '{C64713B6-E029-4CC5-9200-438B72890B6A}';
+  SID_IActiveScriptError =            '{B21FB2A1-5B8F-4963-8C21-21450F84ED7F}';
+  {$ELSE}
   SID_IActiveScriptParse =            '{BB1A2AE2-A4F9-11cf-8F20-00805F2CD064}';
   SID_IActiveScriptParseProcedureOld ='{1CFF0050-6FDD-11d0-9328-00A0C90DCAA9}';
   SID_IActiveScriptParseProcedure =   '{AA5B6A80-B834-11d0-932F-00A0C90DCAA9}';
+  SID_IActiveScriptError =            '{EAE1BA61-A4ED-11cf-8F20-00805F2CD064}';
+  {$ENDIF}
+
   SID_IActiveScriptSite =             '{DB01A1E3-A42B-11cf-8F20-00805F2CD064}';
   SID_IActiveScriptSiteWindow =       '{D10F6761-83E9-11cf-8F20-00805F2CD064}';
   SID_IActiveScriptSiteInterruptPoll ='{539698A0-CDCA-11CF-A5EB-00AA0047A063}';
-  SID_IActiveScriptError =            '{EAE1BA61-A4ED-11cf-8F20-00805F2CD064}';
   SID_IBindEventHandler =             '{63CDBCB0-C1B1-11d0-9336-00A0C90DCAA9}';
   SID_IActiveScriptStats =            '{B8DA6310-E19B-11d0-933C-00A0C90DCAA9}';
 
@@ -182,11 +192,20 @@ type
   IActiveScriptSite = interface(IUnknown)
     [SID_IActiveScript]
     function GetLCID(out plcid: LCID): HResult; stdcall;
+    {$IFDEF WIN32}
     function GetItemInfo(
       pstrName: LPCOLESTR;
       dwReturnMask: DWORD;
       out ppiunkItem: IUnknown;
       out ppti: ITypeInfo): HResult; stdcall;
+     {$ELSE}
+   // Syhunt: pp* must be pointer to work on both 32 and 64 bit
+    function GetItemInfo(
+     pstrName: LPCOLESTR;
+     dwReturnMask: DWORD;
+     out ppiunkItem: Pointer;
+     out ppti: Pointer): HResult; stdcall;
+    {$ENDIF}
     function GetDocVersionString(out pbstrVersion: WideString): HResult; stdcall;
     function OnScriptTerminate(
       var pvarResult: OleVariant;
@@ -263,7 +282,12 @@ type
       pstrSubItemName: LPCOLESTR;
       pstrEventName: LPCOLESTR;
       pstrDelimiter: LPCOLESTR;
+      // Syhunt: different in interface between 32 and 64 bit
+      {$IFDEF WIN32}
       dwSourceContextCookie: DWORD;
+      {$ELSE}
+      dwSourceContextCookie: DWORD;
+      {$ENDIF}
       ulStartingLineNumber: ULONG;
       dwFlags: DWORD;
       out pbstrName: WideString;
@@ -361,11 +385,20 @@ type
   protected
     { IActiveScriptSite }
     function  GetLCID(out plcid: LongWord): HResult; stdcall;
+    {$IFDEF WIN32}
     function GetItemInfo(
       pstrName: LPCOLESTR;
       dwReturnMask: DWORD;
       out ppiunkItem: IUnknown;
       out ppti: ITypeInfo): HResult; stdcall;
+      {$ELSE}
+   // Syhunt: pp* must be pointer to work on both 32 and 64 bit
+    function GetItemInfo(
+     pstrName: LPCOLESTR;
+     dwReturnMask: DWORD;
+     out ppiunkItem: Pointer;
+     out ppti: Pointer): HResult; stdcall;
+     {$ENDIF}
     function  GetDocVersionString(out pbstrVersion: WideString): HResult; stdcall;
     function  OnScriptTerminate(var pvarResult: OleVariant; var pexcepinfo: EXCEPINFO): HResult; stdcall;
     function  OnStateChange(ssScriptState: tagSCRIPTSTATE): HResult; stdcall;
@@ -467,7 +500,12 @@ begin
         begin
           S := Format('%s\Implemented Categories\%s',[Buffer,  { do not localize }
             GUIDToString(CATID_ActiveScriptParse)]);
+          // Syhunt: add XE2 or up compatibility
+          {$IFDEF DXE2_OR_UP}
+          if RegQueryValue(ClassIDKey, PWideChar(WideString(S)), nil, BufSize) = 0 then
+          {$ELSE}
           if RegQueryValue(ClassIDKey, PChar(S), nil, BufSize) = 0 then
+          {$ENDIF}
           begin
             ProgID := ClassIDToProgID(StringToGUID(Buffer));
             if ValidProgID then
@@ -528,8 +566,8 @@ var
 begin
   CloseScriptEngine;
   LanguageW := Language;
-  if CLSIDFromProgID(PWideChar(LanguageW), ScriptCLSID) <> S_OK
-    then ScriptCLSID := NULL_GUID;
+  if CLSIDFromProgID(PWideChar(LanguageW), ScriptCLSID) <> S_OK then
+    ScriptCLSID := NULL_GUID;
   FEngine := CreateComObject(ScriptCLSID) as IActiveScript;
   if FUseSafeSubset then
    begin
@@ -546,22 +584,22 @@ begin
          pOS.SetInterfaceSafetyOptions(IDispatch, INTERFACE_USES_SECURITY_MANAGER, dwEnabled);
       end;
     end;
-
+  //writeln(GUIDToString(IActiveScriptParse));
   hr := FEngine.QueryInterface(IActiveScriptParse, FParser);
   OLECHECK(hr);
-
   hr := FEngine.SetScriptSite(Self);
   OLECHECK(hr);
 
   hr := FParser.InitNew();
   OLECHECK(hr);
-
   for I := 0 to FGlobalObjects.NamedItemCount - 1 do begin
-    if FGlobalObjects.FGlobalMembers.IndexOf(FGlobalObjects.NamedItemName[I]) = -1 then // SYHUNT
-    FEngine.AddNamedItem(PWideChar(WideString(FGlobalObjects.NamedItemName[I])), SCRIPTITEM_ISVISIBLE) else
-    FEngine.AddNamedItem(PWideChar(WideString(FGlobalObjects.NamedItemName[I])), SCRIPTITEM_ISVISIBLE or SCRIPTITEM_GLOBALMEMBERS);
+    if FGlobalObjects.FGlobalMembers.IndexOf(FGlobalObjects.NamedItemName[I]) = -1 then begin
+      // Syhunt
+      FEngine.AddNamedItem(PWideChar(WideString(FGlobalObjects.NamedItemName[I])), SCRIPTITEM_ISVISIBLE);
+    end else begin
+      FEngine.AddNamedItem(PWideChar(WideString(FGlobalObjects.NamedItemName[I])), SCRIPTITEM_ISVISIBLE or SCRIPTITEM_GLOBALMEMBERS);
+    end;
   end;
-
   FEngine.GetScriptDispatch(nil, Disp);
   FDisp := Disp;
 end;
@@ -570,8 +608,13 @@ end;
 procedure TSyActiveScriptSite.CloseScriptEngine;
 begin
   FParser := nil;
+ {$IFDEF WIN32}
   if FEngine <> nil then FEngine.Close;
-  FEngine := nil;
+    FEngine := nil;
+  {$ELSE}
+  // Syhunt: fEngine.Close not working properly in win64
+  if FEngine <> nil then FreeAndNil(FEngine);
+  {$ENDIF}
   FDisp := Unassigned;
 end;
 
@@ -580,7 +623,7 @@ var
   AResult: OleVariant;
   ExcepInfo: TEXCEPINFO;
 begin
-  //CreateScriptEngine(FScriptLanguage); //SYHUNT comentei para funcionar com o  SCRIPTTEXT_ISPERSISTENT
+  //CreateScriptEngine(FScriptLanguage); //SYHUNT: commented out to allow SCRIPTTEXT_ISPERSISTENT
   try
   if FParser.ParseScriptText(PWideChar(ACode), nil, nil, nil, 0, 0,
     SCRIPTTEXT_ISEXPRESSION, AResult, ExcepInfo) = S_OK
@@ -608,10 +651,18 @@ begin
   Result := E_NOTIMPL;
 end;
 
+  {$IFDEF WIN32}
 function TSyActiveScriptSite.GetItemInfo(pstrName: LPCOLESTR;
       dwReturnMask: DWORD;
-      out ppiunkItem: IUnknown;
-      out ppti: ITypeInfo): HResult; stdcall;
+  out ppiunkItem: IUnknown;
+  out ppti: ITypeInfo): HResult; stdcall;
+  {$ELSE}
+// Syhunt: changed types to pointer for 64bit and 32bit compatibility:
+function TSyActiveScriptSite.GetItemInfo(pstrName: LPCOLESTR;
+      dwReturnMask: DWORD;
+      out ppiunkItem: pointer;
+      out ppti: pointer): HResult; stdcall;
+  {$ENDIF}
 begin
   if @ppiunkItem <> nil then Pointer(ppiunkItem) := nil;
   if @ppti <> nil then Pointer(ppti) := nil;
