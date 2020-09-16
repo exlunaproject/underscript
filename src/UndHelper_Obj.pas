@@ -1,32 +1,32 @@
-unit UndHelper_Obj; 
+unit UndHelper_Obj;
 
 {
- UnderScript Helper object
- Copyright (c) 2013-2014 Felipe Daragon
- License: MIT (http://opensource.org/licenses/mit-license.php)
+  UnderScript Helper object
+  Copyright (c) 2013-2020 Felipe Daragon
+  License: MIT (http://opensource.org/licenses/mit-license.php)
 }
 
 interface
 
 uses
- Lua, pLua, Variants, UndConst;
+  Lua, pLua, Variants, UndConst;
 
 type
   TUndHelper = class
   public
-    LuaState:PLua_State;
+    LuaState: PLua_State;
     constructor Create;
-    procedure Write(s:WideString);
-    procedure WriteLn(s:WideString); 
-    procedure Run(Script:AnsiString); 
-    function GetG(valName : AnsiString): Variant;
-    procedure SetG(valName : AnsiString; const AValue: Variant);
-    function GetL(valName : AnsiString): Variant;
-    procedure SetL(valName : AnsiString; const AValue: Variant);
+    procedure Write(s: String);
+    procedure WriteLn(s: String);
+    procedure Run(Script: String);
+    function GetG(valName: String): Variant;
+    procedure SetG(valName: String; const AValue: Variant);
+    function GetL(valName: String): Variant;
+    procedure SetL(valName: String; const AValue: Variant);
   end;
 
 var
- UndHelper:TUndHelper;
+  UndHelper: TUndHelper;
 
 implementation
 
@@ -35,51 +35,67 @@ begin
   inherited Create;
 end;
 
-procedure TUndHelper.Run(Script:AnsiString);
+procedure TUndHelper.Run(Script: String);
 begin
-  luaL_loadbuffer(LuaState, PChar(Script), Length(Script),nil);
+  luaL_loadbuffer(LuaState, PAnsiChar(AnsiString(Script)), Length(Script), nil);
   lua_pcall(LuaState, 0, 0, 0);
 end;
 
-procedure TUndHelper.SetL(valName : AnsiString; const AValue: Variant);
+procedure TUndHelper.SetL(valName: String; const AValue: Variant);
 begin
-  pLua_SetLocal(LuaState,ValName,AValue);
+  pLua_SetLocal(LuaState, valName, AValue);
 end;
 
-function TUndHelper.GetL(valName : AnsiString): Variant;
-var v:variant;
+function TUndHelper.GetL(valName: String): Variant;
+var
+  v: Variant;
 begin
- v:=pLua_GetLocal(LuaState,valname); 
- //writeln('v is:'+v);
- result:=v;
+  try
+    v := pLua_GetLocal(LuaState, valName);
+  except
+  end;
+  // writeln('v is:'+v);
+  result := v;
 end;
 
-procedure TUndHelper.SetG(valName : AnsiString; const AValue: Variant);
+procedure TUndHelper.SetG(valName: String; const AValue: Variant);
+var
+  v: Variant;
 begin
-  pLua_SetGlobal(LuaState,ValName,AValue);
+  v := AValue;
+  try
+    pLua_SetGlobal(LuaState, valName, v);
+  except
+  end;
 end;
 
-function TUndHelper.GetG(valName : AnsiString): Variant;
-var v:variant;
+function TUndHelper.GetG(valName: String): Variant;
+var
+  v: Variant;
 begin
- v:=pLua_GetGlobal(LuaState,ValName);
- result:=v;
+  try
+    v := pLua_GetGlobal(LuaState, valName);
+  except
+  end;
+  result := v;
 end;
 
-procedure TUndHelper.write(s:WideString);
+procedure TUndHelper.Write(s: String);
 begin
- Und_CustomWrite(LuaState,s,rudCustomFunc_Write); //system.write(s);
+  Und_CustomWrite(LuaState, s, rudCustomFunc_Write);
 end;
 
-procedure TUndHelper.writeln(s:WideString);
+procedure TUndHelper.writeln(s: String);
 begin
- Und_CustomWriteLn(LuaState,s,rudCustomFunc_WriteLn); //system.writeln(s);
+  Und_CustomWriteLn(LuaState, s, rudCustomFunc_WriteLn);
 end;
 
 initialization
-  UndHelper:=TUndHelper.create;
+
+UndHelper := TUndHelper.Create;
+
 finalization
-  UndHelper.free;
+
+UndHelper.free;
 
 end.
- 

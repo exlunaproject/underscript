@@ -643,7 +643,7 @@ implementation
 
 uses
   SysUtils, dws2Functions, dws2Errors
-{$IFDEF WIN32}
+{$IFDEF MSWINDOWS}
   ,Windows
 {$ENDIF};
 

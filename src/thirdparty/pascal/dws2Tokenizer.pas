@@ -26,7 +26,10 @@
 
 {$I dws2.inc}
 
+
 unit dws2Tokenizer;
+
+{$I Catarinka.inc}
 
 interface
 
@@ -484,11 +487,11 @@ begin
           caFloat:
             begin
               try
-                oldsep := DecimalSeparator;
-                DecimalSeparator := '.';
+                oldsep := {$IFDEF DXE2_OR_UP}System.SysUtils.FormatSettings.{$ENDIF}DecimalSeparator;
+                {$IFDEF DXE2_OR_UP}System.SysUtils.FormatSettings.{$ENDIF}DecimalSeparator := '.';
                 Result.FFloat := StrToFloat(s);
                 Result.FTyp := ttFloatVal;
-                DecimalSeparator := oldsep;
+                {$IFDEF DXE2_OR_UP}System.SysUtils.FormatSettings.{$ENDIF}DecimalSeparator := oldsep;
               except
                 on e: Exception do
                   FMsgs.AddCompilerStop(FPos, Format(TOK_InvalidFloatConstant, [s]));

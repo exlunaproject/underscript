@@ -3,12 +3,14 @@ unit uActiveScript;
  UnderScript JavaScript, VBScript & other ActiveScript Wrappers
  Copyright (c) 2013-2014 Felipe Daragon
  License: MIT (http://opensource.org/licenses/mit-license.php)
+
+ ToDo: Needs cleanup
 }
 
 interface
 
 uses
-  Classes, SysUtils, lua, plua, LuaObject, ActiveX, SyJSRunnerAS, UndHelperUnit,
+  Classes, SysUtils, lua, plua, LuaObject, ActiveX, CatJSRunnerAS, UndHelperUnit,
   CatStrings, UndImporter, UndConst, TypInfo;
 
 const
@@ -49,23 +51,20 @@ begin
   Importer.EnableImport:=true;
   case TLanguage(GetEnumValue(TypeInfo(TLanguage), lang)) of
     JavaScript: begin
-    importer.FuncReadFormat:=debug+'%k = '+rudLibName+'.GetL("%k");'+debugend;
-    importer.FuncWriteFormat:=crlf+rudLibName+'.SetL("%k",%k);';
+    importer.FuncReadFormat:=debug+'%k = %l.GetL("%k");'+debugend;
+    importer.FuncWriteFormat:=crlf+'%l.SetL("%k",%k);';
     end;
     LuaScript:begin
-    importer.FuncReadFormat:='%k = '+rudLibName+':GetL("%k")'+crlf;
-    importer.FuncWriteFormat:=crlf+rudLibName+':SetL("%k",%k)';
+    importer.FuncReadFormat:='%k = %l:GetL("%k")'+crlf;
+    importer.FuncWriteFormat:=crlf+'%l:SetL("%k",%k)';
     end;
     PerlScript:begin
-    importer.FuncReadFormat:='$%k = $'+rudLibName+'->GetL("%k");';
-    importer.FuncWriteFormat:=crlf+'$'+rudLibName+'->SetL("%k",$%k);';
+    importer.FuncReadFormat:='$%k = $%l->GetL("%k");';
+    importer.FuncWriteFormat:=crlf+'$%l->SetL("%k",$%k);';
     end;
     VBScript:begin
-    importer.FuncReadFormat:='%k = '+rudLibName+'.GetL("%k")'+crlf;
-    importer.FuncWriteFormat:=crlf+rudLibName+'.SetL "%k",%k';
-    //importer.FuncReadFormat:=importer.FuncReadFormat+rudLibName+'.WriteLn("Loading %k:" & %k)'+crlf; // debug
-    //importer.FuncWriteFormat:=rudLibName+'.WriteLn("Setting %k to:" & %k)'+crlf+importer.FuncWriteFormat; // debug
-    //importer.FuncWriteFormat:=importer.FuncWriteFormat+rudLibName+'.WriteLn("Seted %k:" & %k)'+crlf; // debug
+    importer.FuncReadFormat:='%k = %l.GetL("%k")'+crlf;
+    importer.FuncWriteFormat:=crlf+'%l.SetL "%k",%k';
     end;
   else
    // language not found, disables import of variables
@@ -119,45 +118,6 @@ begin
  Script_Run(L,lua_tostring(L,2),lua_tostring(L,1),true); result:=1;
 end;
 
-{procedure RegisterScriptFunctions(L : Plua_State);
-const
- vbscript : array [1..2] of TSyhuntLuaLib =
-(
- (n:'VBScript_Eval';f:@VBScript_Eval),
- (n:'VBScript_Run';f:@VBScript_Run)
- );
- perlscript : array [1..2] of TSyhuntLuaLib =
-(
- (n:'PerlScript_Eval';f:@PerlScript_Eval),
- (n:'PerlScript_Run';f:@PerlScript_Run)
- );
- javascript : array [1..4] of TSyhuntLuaLib =
-(
- (n:'JavaScript_Eval';f:@JavaScript_Eval),
- (n:'JavaScript_Run';f:@JavaScript_Run),
- (n:'JSEval';f:@JavaScript_Eval),
- (n:'JSRun';f:@JavaScript_Run)
- );
- luascript : array [1..2] of TSyhuntLuaLib =
-(
- (n:'LuaScript_Eval';f:@LuaScript_Eval),
- (n:'LuaScript_Run';f:@LuaScript_Run)
- );
- activescript : array [0..3] of TSyhuntLuaLib =
-(
- (n:'Script_Eval';f:@ActiveScript_Eval),
- (n:'Script_Run';f:@ActiveScript_Run),
- (n:'ActiveScript_Eval';f:@ActiveScript_Eval),
- (n:'ActiveScript_Run';f:@ActiveScript_Run)
- );
-begin
- lual_register(L,cUnd,@luascript);
- lual_register(L,cUnd,@activescript);
- lual_register(L,cUnd,@javascript);
- lual_register(L,cUnd,@perlscript);
- lual_register(L,cUnd,@vbscript);
-end; }
-
 type
   TScriptErrorHandler = class
   public
@@ -173,13 +133,19 @@ begin
 end;
 
 // Main Functions, important: not to be called directly
-function Script_Run(L: plua_State;Script,Lang:string;iseval:boolean=false):integer;  // runs and prints the output or errorinfo
-var obj:TScarlettActiveScript; r:string; W : TUndHelper; Importer:TUndImporter; ErrorHandler:TScriptErrorHandler;
+// runs and prints the output or errorinfo
+function Script_Run(L: plua_State; Script, Lang:string; iseval:boolean=false):integer;
+var
+ obj:TScarlettActiveScript;
+ r:string;
+ W: TUndHelper;
+ Importer: TUndImporter;
+ ErrorHandler:TScriptErrorHandler;
 begin
   CoInitialize(nil);
   ErrorHandler:=TScriptErrorHandler.create;
   importer:=TUndImporter.create(L);
-  //Importer.EnableDebug:=true;
+  Importer.EnableDebug:=false;
   PrepareLanguage(Importer,lang);
   w:=TUndHelper.Create;
   w.LuaState:=L; // IMPORTANT!
@@ -192,15 +158,13 @@ begin
   obj.asw.UseSafeSubset:=false;
   obj.asw.AddNamedItem(rudLibName, w);
   script:=lua_tostring(L,1);
-  //try
-  script:=importer.GetScript(script);
-  //except end; // eats any crash
+  script:=importer.GetScript(L, script);
   importer.Free;
   if iseval then begin
-  r:=obj.runexpression(script);
-  //lua_pushstring(L, pchar(r)); // this was creating issue with manipulation of variables
-  end else
-  obj.runscript(script);
+    r:=obj.runexpression(script);
+  end else begin
+    obj.runscript(script);
+  end;
   //if obj.asw_success =false then UndHelper.writeln(obj.asw.scriptlanguage+': '+obj.errors.Text);
   obj.Free;
   ErrorHandler.free;

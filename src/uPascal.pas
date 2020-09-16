@@ -2,15 +2,22 @@ unit uPascal;
 
 {
  UnderScript Pascal Wrapper
- Copyright (c) 2013-2014 Felipe Daragon
+ Copyright (c) 2013-2020 Felipe Daragon
  License: MIT (http://opensource.org/licenses/mit-license.php)
 }
 
 interface
 
+{$I Catarinka.inc}
+
 uses
-  Classes, sysUtils, lua, plua, LuaObject, uPSCompiler, uPSRuntime, CatStrings,
-  forms, UndHelper_Obj, uPSComponent, UndImporter, UndConst;
+{$IFDEF DXE2_OR_UP}
+  System.Classes, System.SysUtils, Vcl.Forms,
+{$ELSE}
+  Classes, SysUtils, Forms,
+{$ENDIF}
+  lua, plua, LuaObject, uPSCompiler, uPSRuntime, CatStrings,
+  UndHelper_Obj, uPSComponent, UndImporter, UndConst;
 
 type
    TUndPascal = class
@@ -58,7 +65,7 @@ uses uPSR_std, uPSC_std,
   uPSC_DB, uPSR_DB,
   uPSC_extctrls, uPSR_extctrls,
   uPSC_menus, uPSR_menus,
-  uPascal_UndHelper_Obj,
+  UndHelper_REM,
   uPSC_dll, uPSR_dll;
 
 {function method_evalstring(l : PLua_State) : Integer; cdecl;

@@ -1,2 +1,3 @@
-* Replace functions from LuaUtils with functions from pLua-XE in UndImporter.pas
 * Needs some code clean-up
+* It would be nice to have a 64-bit compatible version of php4Delphi. While we
+don't have one, Underscript 2.0 is calling the PHP 64-bit binary directly.

@@ -46,6 +46,7 @@ automatically made accessible from within the code just like if they were part o
 Compiled binaries for Windows can be downloaded from the links below.
 
 * [Huntpad 32-bit](http://www.syhunt.com/en/index.php?n=Tools.DownloadHuntpad) (included with it)
+* [Huntpad 64-bit](http://www.syhunt.com/en/index.php?n=Tools.DownloadHuntpad) (coming soon)
 
 Third-party libraries already included:
 * PHP, freely available from http://www.php.net/
@@ -58,11 +59,11 @@ Not included - must be downloaded separately:
 
 ## Compiling
 
-For compiling Underscript, you will need [Catarinka](https://github.com/felipedaragon/catarinka), [pLua](https://github.com/felipedaragon/pLua-XE), [RubyComp](https://github.com/felipedaragon/RubyComp) and [LuaUtils](https://github.com/felipedaragon/LuaUtils).
+For compiling Underscript, you will need [Catarinka](https://github.com/felipedaragon/catarinka) and [pLua](https://github.com/felipedaragon/pLua-XE).
  
-There is no need to install third-party components in the IDE - you can just add the dependencies listed above to the library path and hit compile. It currently compiles under D7 and possibly Lazarus with adaptations.
+There is no need to install third-party components in the IDE - you can just add the dependencies listed above to the library path and hit compile. It currently compiles under Delphi XE10 Tokyo or up.
 
-A XE-compatible version is still a work in progress and not available at the moment. We also would love to see a C port of this library.
+We also would love to see a C port of this library.
 
 ## License & Credits
 

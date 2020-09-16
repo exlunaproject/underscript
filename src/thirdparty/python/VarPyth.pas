@@ -12,8 +12,6 @@ unit VarPyth;
 (*                                  CANADA                                *)
 (*                                  e-mail: p4d@mmm-experts.com           *)
 (*                                                                        *)
-(*  look our page at: http://mmm-experts.com/                             *)
-(*      and our Wiki at: http://py4d.pbwiki.com/                          *)
 (**************************************************************************)
 (*  Functionality:  This allows you to use Python objects like COM        *)
 (*                  automation objects, inside your Delphi source code.   *)
@@ -52,7 +50,6 @@ function VarPythonCreate( AObject : PPyObject ) : Variant; overload;
 function VarPythonCreate( const AValue : Variant ) : Variant; overload;
 function VarPythonCreate( const AValues : array of const; ASequenceType : TSequenceType = stList ) : Variant; overload;
 function VarPythonEval( const APythonExpression : AnsiString) : Variant;
-function GetAtom( AObject : PPyObject ) : Variant; // compatibility function with PythonAtom.pas
 
 { Python variant helper functions }
 function VarPython: TVarType;
@@ -100,22 +97,48 @@ function NewPythonDict: Variant;
 // Not really needed since you can assign a PythonVariant to a string anyway
 // but it is slightly faster and in some places avoids the declaration of a variable
 function VarPythonAsString(AValue : Variant) : string;
+{$IFDEF FPC}
+// to work around http://mantis.freepascal.org/view.php?id=20849)
+function VarPythonToVariant(AValue : Variant): Variant;
+{$ENDIF}
 
-function None : Variant;
-function Ellipsis : Variant;
-function MainModule : Variant; // return the main module that's used for executing a script.
-function BuiltinModule : Variant; // return the builtin module
-function SysModule : Variant; // return the builtin module 'sys'
-function DatetimeModule : Variant; // return the builtin module 'datetime'
-function Import( const AModule : AnsiString ) : Variant; // import a Python module and return the module object.
-function len(const AValue : Variant ) : NativeInt; // return the length of a Python collection.
-function _type(const AValue : Variant ) : Variant; // return the type object of a Python object.
-function iter(const AValue : Variant ) : Variant; // return an iterator for the container AValue. You can call the 'next' method of the iterator until you catch the EPyStopIteration exception.
+function None: Variant;
+function Ellipsis: Variant;
+function MainModule: Variant; // return the main module that's used for executing a script.
+function BuiltinModule: Variant; // return the builtin module
+function SysModule: Variant; // return the builtin module 'sys'
+function DatetimeModule: Variant; // return the builtin module 'datetime'
+function Import( const AModule : AnsiString ): Variant; // import a Python module and return the module object.
+function len(const AValue : Variant ): NativeInt; // return the length of a Python collection.
+function _type(const AValue : Variant ): Variant; // return the type object of a Python object.
+function iter(const AValue : Variant ): Variant; // return an iterator for the container AValue. You can call the 'next' method of the iterator until you catch the EPyStopIteration exception.
+
+type
+  TVarPyEnumerator = record
+  private
+    FIterator: Variant;
+    FCurrent: Variant;
+  public
+    constructor Create(const AValue: Variant);
+    function MoveNext: Boolean; inline;
+    function GetCurrent: Variant; inline;
+    property Current: Variant read GetCurrent;
+  end;
+
+  TVarPyEnumerateHelper = record
+  private
+    FIterable: Variant;
+  public
+    constructor Create(const AValue: Variant);
+    function  GetEnumerator: TVarPyEnumerator;
+  end;
+
+function VarPyIterate(const AValue: Variant): TVarPyEnumerateHelper;
 
 implementation
 
 uses
-  VarUtils, SysUtils, SysConst, TypInfo, Classes;
+  VarUtils, SysUtils, TypInfo, Classes;
 
 type
   TNamedParamDesc = record
@@ -126,6 +149,9 @@ type
 
 {$IFDEF DELPHIXE2_OR_HIGHER}
   {$DEFINE USESYSTEMDISPINVOKE}  //Delphi 2010 DispInvoke is buggy
+  {$IF defined(OSX64) or defined(LINUX) or not defined(DELPHI10_4_OR_HIGHER)}
+    {$DEFINE PATCHEDSYSTEMDISPINVOKE}  //To correct memory leaks
+  {$IFEND}
 {$ENDIF}
 {$IF DEFINED(FPC_FULLVERSION) and (FPC_FULLVERSION >= 20500)}
   {$DEFINE USESYSTEMDISPINVOKE}
@@ -143,10 +169,9 @@ type
     function EvalPython(const V: TVarData; const AName: AnsiString;
       const Arguments: TVarDataArray): PPyObject;
     function  VarDataToPythonObject( AVarData : TVarData ) : PPyObject;
-    procedure PythonObjectToVarData( var Dest : TVarData; AObject : PPyObject; APythonAtomCompatible : Boolean );
     procedure PyhonVarDataCreate( var Dest : TVarData; AObject : PPyObject );
-   {$IFNDEF USESYSTEMDISPINVOKE}
-    procedure DoDispInvoke(Dest: PVarData; const Source: TVarData;
+    {$IFNDEF USESYSTEMDISPINVOKE}
+    procedure DoDispInvoke(Dest: PVarData; var Source: TVarData;
       CallDesc: PCallDesc; Params: Pointer); virtual;
     function GetPropertyWithArg(var Dest: TVarData; const V: TVarData;
       const AName: AnsiString; AArg : TVarData): Boolean; virtual;
@@ -180,10 +205,15 @@ type
       const Arguments: TVarDataArray): Boolean; override;
     function GetProperty(var Dest: TVarData; const V: TVarData;
       const AName: string): Boolean; override;
-    function SetProperty(const V: TVarData; const AName: string;
+    function SetProperty({$IFDEF FPC}var{$ELSE}const{$ENDIF} V: TVarData; const AName: string;
       const Value: TVarData): Boolean; override;
-    procedure DispInvoke(Dest: PVarData; const Source: TVarData;
-      CallDesc: PCallDesc; Params: Pointer); override;
+    {$IFDEF DELPHIXE7_OR_HIGHER}
+    procedure DispInvoke(Dest: PVarData;
+      [Ref] const Source: TVarData; CallDesc: PCallDesc; Params: Pointer);override;
+    {$ELSE}
+    procedure DispInvoke(Dest: PVarData;
+       var Source: TVarData; CallDesc: PCallDesc; Params: Pointer);override;
+    {$ENDIF}
   end;
 
 var
@@ -195,14 +225,13 @@ type
   TPythonData = class(TObject)
   private
     fPyObject: PPyObject;
-    fPythonAtomCompatible: Boolean;
-    function GetAsString: String;
+    function GetAsString: string;
     procedure SetPyObject(const Value: PPyObject);
     function GetAsVariant: Variant;
     function GetAsWideString: UnicodeString;
+    function GetAsAnsiString: AnsiString;
   public
-    constructor Create(AObject : PPyObject); overload;
-    constructor Create(AObject : PPyObject; APythonAtomCompatible : Boolean); overload;
+    constructor Create(AObject : PPyObject);
     destructor Destroy; override;
 
     // query state
@@ -232,13 +261,13 @@ type
     procedure DoNot;
 
     // conversion
-    property AsString: String read GetAsString;
+    property AsString: string read GetAsString;
+    property AsAnsiString: AnsiString read GetAsAnsiString;
     property AsVariant: Variant read GetAsVariant;
     property AsWideString: UnicodeString read GetAsWideString;
 
     // data
     property PyObject : PPyObject read fPyObject write SetPyObject;
-    property PythonAtomCompatible : Boolean read fPythonAtomCompatible;
   end;
 
 type
@@ -247,9 +276,9 @@ type
     VType: TVarType;
     Reserved1, Reserved2, Reserved3: Word;
     VPython: TPythonData;
-    Reserved4: LongInt;
+    Reserved4: Integer;
     {$IFDEF CPUX64}
-    Reserved5: LongInt;  // size is 24 bytes in 64bit
+    Reserved5: Integer;  // size is 24 bytes in 64bit
     {$ENDIF CPUX64}
   end;
 
@@ -257,7 +286,6 @@ type
 resourcestring
   SMultiDimensionalPropsNotSupported = 'Multi-dimensional sequences or mappings are not supported in Python';
   SCantConvertArg = 'Can''t convert argument #%d of %s into a Python object';
-  SBothOperandsOfIntDivideMustBeIntegers = 'Both operands of an integer division must be of type integer';
   SCantConvertKeyToPythonObject = 'Can''t convert Key into a Python object';
   SCantConvertValueToPythonObject = 'Can''t convert Value into a Python object';
   SCantCreateNewSequenceObject = 'Can''t create a new sequence object';
@@ -341,17 +369,6 @@ begin
       Py_XDecRef(_obj);
     end;
   end;
-end;
-
-// compatibility function with PythonAtom.pas
-function GetAtom( AObject : PPyObject ) : Variant;
-begin
-  VarClear(Result);
-  if Assigned(AObject) then
-  begin
-    TPythonVarData(Result).VType := VarPython;
-    TPythonVarData(Result).VPython := TPythonData.Create(AObject, True);
-  end; // of if
 end;
 
 function VarPython: TVarType;
@@ -648,6 +665,16 @@ begin
     Result := AValue;
 end;
 
+{$IFDEF FPC}
+function VarPythonToVariant(AValue : Variant): Variant;
+begin
+  if VarIsPython(AValue) then
+    Result :=
+      GetPythonEngine.PyObjectAsVariant(TPythonVarData(AValue).VPython.PyObject)
+  else
+    Result := AValue;
+end;
+{$ENDIF}
 
 function None : Variant;
 begin
@@ -763,7 +790,7 @@ procedure TPythonVariantType.BinaryOp(var Left: TVarData;
 begin
   if Right.VType = VarType then
     case Left.VType of
-      varString {$IFDEF UNICODE}, varUString {$ENDIF}:
+      varString, varUString:
         case AOperator of
           opAdd:
             Variant(Left) := Variant(Left) + TPythonVarData(Right).VPython.AsString;
@@ -825,10 +852,21 @@ var
 begin
   if Source.VType = VarType then
     case AVarType of
-      varOleStr {$IFDEF UNICODE}, varUString {$ENDIF} :
+      varOleStr:
         VarDataFromOleStr(Dest, TPythonVarData(Source).VPython.AsWideString);
+      varUString:
+        {$IFDEF FPC}
+        VarDataFromOleStr(Dest, TPythonVarData(Source).VPython.AsWideString);
+        {$ELSE}
+        VarDataFromStr(Dest, TPythonVarData(Source).VPython.AsWideString);
+        {$ENDIF}
       varString:
-        VarDataFromStr(Dest, TPythonVarData(Source).VPython.AsString);
+        // Preserve AnsiStrings
+        {$IFDEF FPC}
+        Variant(Dest) := TPythonVarData(Source).VPython.AsWideString;
+        {$ELSE}
+        VarDataFromLStr(Dest, TPythonVarData(Source).VPython.AsAnsiString);
+        {$ENDIF}
     else
       if AVarType and varTypeMask = varBoolean then
       begin
@@ -861,7 +899,6 @@ procedure TPythonVariantType.VarDataCastTo(var Dest: TVarData; const Source: TVa
 begin
   VarCast(Variant(Dest), Variant(Source), AVarType);
 end;
-
 {$ENDIF}
 
 procedure TPythonVariantType.Clear(var V: TVarData);
@@ -901,11 +938,7 @@ begin
   if Indirect and VarDataIsByRef(Source) then
     VarDataCopyNoInd(Dest, Source)
   else
-  begin
     PyhonVarDataCreate( Dest, TPythonVarData(Source).VPython.PyObject );
-    // propagate compatibility mode
-    TPythonVarData(Dest).VPython.fPythonAtomCompatible := TPythonVarData(Source).VPython.PythonAtomCompatible;
-  end; // of if
 end;
 
 procedure SetClearVarToEmptyParam(var V: TVarData);
@@ -924,20 +957,232 @@ const
   CPropertyGet = $02;
   CPropertySet = $04;
 
-{$IFDEF USESYSTEMDISPINVOKE}
+{$IF defined(PATCHEDSYSTEMDISPINVOKE) and (defined(OSX64) or defined(LINUX))}
+{
+   Fixes https://quality.embarcadero.com/browse/RSP-28097
+}
+var
+  _EmptyBSTR: PWideChar = nil;
+
+Const
+  SDispatchError = 'Variant method calls not supported';
+
+procedure _DispInvokeError;
+begin
+  raise EVariantDispatchError.Create(SDispatchError);
+end;
+
+function GetDispatchInvokeArgs(CallDesc: PCallDesc; Params: Pointer; var Strings: TStringRefList; OrderLTR : Boolean): TVarDataArray;
+const
+  { Parameter type masks - keep in sync with decl.h/ap* enumerations}
+  atString   = $48;
+  atUString  = $4A;
+  atVarMask  = $3F;
+  atTypeMask = $7F;
+  atByRef    = $80;
+var
+  I: Integer;
+  ArgType: Byte;
+  PVarParm: PVarData;
+  StringCount: Integer;
+  VAList: TVarArgList;
+  Temp: Pointer;
+begin
+  VAList := TVarArgList(Params^);
+  StringCount := 0;
+  SetLength(Result, CallDesc^.ArgCount);
+  for I := 0 to CallDesc^.ArgCount-1 do
+  begin
+    ArgType := CallDesc^.ArgTypes[I];
+
+    if OrderLTR then
+      PVarParm := @Result[I]
+    else
+      PVarParm := @Result[CallDesc^.ArgCount-I-1];
+
+    if (ArgType and atByRef) = atByRef then
+    begin
+      Temp := VarArgGetValue(VAList, Pointer);
+      if (ArgType and atTypeMask) = atString then
+      begin
+        PVarData(PVarParm)^.VType := varByRef or varOleStr;
+        PVarData(PVarParm)^.VPointer := Strings[StringCount].FromAnsi( PAnsiString(Temp));
+        Inc(StringCount);
+      end
+      else
+      if (ArgType and atTypeMask) = atUString then
+      begin
+        PVarData(PVarParm)^.VType := varByRef or varOleStr;
+        PVarData(PVarParm)^.VPointer := Strings[StringCount].FromUnicode(PUnicodeString(Temp));
+        Inc(StringCount);
+      end
+      else
+      begin
+        if ((ArgType and atTypeMask) = varVariant) and
+          ((PVarData(Temp)^.VType = varString) or (PVarData(Temp)^.VType = varUString)) then
+          VarCast(PVariant(Temp)^, PVariant(Temp)^, varOleStr);
+        //PVarData(PVarParm)^.VType := varByRef or (ArgType and atTypeMask);
+
+        ArgType := ArgType and atTypeMask;
+        if DispatchUnsignedAsSigned then
+          case ArgType of
+            varUInt64:   ArgType := varInt64;
+            varUInt32:   ArgType := varInteger;
+            varWord:     ArgType := varSmallint;
+            varByte:     ArgType := varShortInt;
+          end;
+        PVarData(PVarParm)^.VType := varByRef or ArgType;
+
+        PVarData(PVarParm)^.VPointer := Temp;
+      end;
+    end
+    else // ByVal
+    begin
+      PVarParm^.VType := ArgType;
+      case ArgType of
+        varEmpty, varNull: ; // Only need to set VType
+        varInteger:   PVarParm^.VInteger := VarArgGetValue(VAList, Integer);
+        varSingle:    PVarParm^.VSingle := VarArgGetValue(VAList, Single);
+        varDouble:    PVarParm^.VDouble :=  VarArgGetValue(VAList, Double);
+        varCurrency:  PVarParm^.VCurrency := VarArgGetValue(VAList, Currency);
+        varDate:      PVarParm^.VDate := VarArgGetValue(VAList, TDateTime);
+        varOleStr:    PVarParm^.VPointer := VarArgGetValue(VAList, Pointer);
+        varDispatch:  PVarParm^.VDispatch := VarArgGetValue(VAList, Pointer);
+        varError:     PVarParm^.VError := HRESULT($80020004); //DISP_E_PARAMNOTFOUND;
+        varBoolean:   PVarParm^.VBoolean := VarArgGetValue(VAList, Boolean);
+        varVariant:
+          begin
+            PVarParm^.VType := varEmpty;
+{$IFDEF CPUX64}
+
+//          PVariant(PVarParm)^ := PVariant(Params^)^;
+            PVariant(PVarParm)^ := VarArgGetValue(VAList, PVariant)^;
+{$ELSE}
+//          PVariant(PVarParm)^ := PVariant(Params)^;
+            PVariant(PVarParm)^ := VarArgGetValue(VAList, Variant);
+{$ENDIF}
+          end;
+        varUnknown:   PVarParm^.VUnknown := VarArgGetValue(VAList, Pointer);
+        varSmallint:  PVarParm^.VSmallInt := VarArgGetValue(VAList, SmallInt);
+        varShortInt:  PVarParm^.VShortInt := VarArgGetValue(VAList, ShortInt);
+        varByte:      PVarParm^.VByte :=  VarArgGetValue(VAList, Byte);
+        varWord:
+          begin
+            if DispatchUnsignedAsSigned then
+            begin
+              PVarParm^.VType := varInteger;
+              PVarParm^.VInteger := Integer(VarArgGetValue(VAList, Word));
+            end else
+              PVarParm^.VWord := VarArgGetValue(VAList, Word);
+          end;
+        varUInt32:
+          begin
+            if DispatchUnsignedAsSigned then
+            begin
+              PVarParm^.VType := varInteger;
+              PVarParm^.VInteger := Integer(VarArgGetValue(VAList, Cardinal));
+            end else
+              PVarParm^.VUInt32 := VarArgGetValue(VAList, Cardinal);
+          end;
+        varInt64:     PVarParm^.VInt64 := VarArgGetValue(VAList, Int64);
+        varUInt64:
+          begin
+            if DispatchUnsignedAsSigned then
+            begin
+              PVarParm^.VType := varInt64;
+              PVarParm^.VInt64 := VarArgGetValue(VAList, Int64); //Int64(PInt64(Params)^);
+            end else
+              PVarParm^.VUInt64 := VarArgGetValue(VAList, UInt64); //PUInt64(Params)^;
+          end;
+        atString:
+        begin
+          PVarParm^.VType := varOleStr;
+          Temp := VarArgGetValue(VAList, Pointer);
+          if PAnsiString(Temp)^ <> '' then
+          begin
+            {
+            This line causes a crash and is replaced with the one below in line with unicode strings
+            PVarParm^.VPointer := PWideChar(Strings[StringCount].FromAnsi(PAnsiString(Temp))^);
+            }
+            PVarParm^.VPointer := PWideChar(Strings[StringCount].FromAnsi(@AnsiString(Temp))^);
+            Strings[StringCount].Ansi := nil;
+            Inc(StringCount);
+          end
+          else
+            PVarParm^.VPointer := _EmptyBSTR;
+        end;
+        atUString:
+          begin
+            PVarParm^.VType := varOleStr;
+            Temp := VarArgGetValue(VAList, Pointer);
+            if UnicodeString(Temp) <> '' then
+            begin
+              PVarParm^.VPointer := PWideChar(Strings[StringCount].FromUnicode(@UnicodeString(Temp))^);
+              Strings[StringCount].Unicode := nil;
+              Inc(StringCount);
+            end
+            else
+              PVarParm^.VPointer := _EmptyBSTR;
+          end;
+      else
+        // Unsupported Var Types
+        //varDecimal  = $000E; { vt_decimal     14 } {UNSUPPORTED as of v6.x code base}
+        //varUndef0F  = $000F; { undefined      15 } {UNSUPPORTED per Microsoft}
+        //varRecord   = $0024; { VT_RECORD      36 }
+        //varString   = $0100; { Pascal string  256 } {not OLE compatible }
+        //varAny      = $0101; { Corba any      257 } {not OLE compatible }
+        //varUString  = $0102; { Unicode string 258 } {not OLE compatible }
+        _DispInvokeError;
+      end;
+    end;
+  end;
+end;
+{$IFEND}
+
+{$IFDEF DELPHIXE7_OR_HIGHER}
 procedure TPythonVariantType.DispInvoke(Dest: PVarData;
-  const Source: TVarData; CallDesc: PCallDesc; Params: Pointer);
-{$IFDEF DELPHIXE2}
-  //  Modified to correct memory leak QC102387
+  [Ref] const Source: TVarData; CallDesc: PCallDesc; Params: Pointer);
+{$ELSE}
+procedure TPythonVariantType.DispInvoke(Dest: PVarData;
+   var Source: TVarData; CallDesc: PCallDesc; Params: Pointer);
+{$ENDIF}
+{$IFDEF USESYSTEMDISPINVOKE}
+{$IFDEF PATCHEDSYSTEMDISPINVOKE}
+  //  Modified to correct memory leak QC102387 / RSP-23093
+  procedure PatchedFinalizeDispatchInvokeArgs(CallDesc: PCallDesc; const Args: TVarDataArray; OrderLTR : Boolean);
+  const
+    atByRef    = $80;
+  var
+    I: Integer;
+    ArgType: Byte;
+    PVarParm: PVarData;
+    VType: TVarType;
+  begin
+    for I := 0 to CallDesc^.ArgCount-1 do
+    begin
+      ArgType := CallDesc^.ArgTypes[I];
+
+      if OrderLTR then
+        PVarParm := @Args[I]
+      else
+        PVarParm := @Args[CallDesc^.ArgCount-I-1];
+
+      VType := PVarParm.VType;
+
+      // Only ByVal Variant or Array parameters have been copied and need to be released
+      // Strings have been released via the use of the TStringRefList parameter to GetDispatchInvokeArgs
+      // !!Modified to prevent memory leaks!! RSP-23093
+      if ((ArgType and atByRef) <> atByRef) and ((ArgType = varVariant) or ((VType and varArray) = varArray)) then
+        VarClear(PVariant(PVarParm)^);
+    end;
+  end;
+
   procedure PatchedDispInvoke(Dest: PVarData;
     const Source: TVarData; CallDesc: PCallDesc; Params: Pointer);
+  {$IFNDEF DELPHI10_4_OR_HIGHER}
   type
-    PParamRec = ^TParamRec;
-    TParamRec = array[0..3] of LongInt;
-    TStringDesc = record
-      BStr: WideString;
-      PStr: PAnsiString;
-    end;
+    PStringRefList = ^TStringRefList;
+  {$ENDIF}
   const
     CDoMethod    = $01;
     CPropertyGet = $02;
@@ -947,67 +1192,82 @@ procedure TPythonVariantType.DispInvoke(Dest: PVarData;
     LIdent: string;
     LTemp: TVarData;
     VarParams : TVarDataArray;
+    {$IFNDEF DELPHI10_4_OR_HIGHER}
+    Strings: array of TStringRef;
+    {$ELSE}
     Strings: TStringRefList;
+    {$ENDIF}
+    PIdent: PByte;
   begin
     // Grab the identifier
     LArgCount := CallDesc^.ArgCount;
-    LIdent := FixupIdent(AnsiString(PAnsiChar(@CallDesc^.ArgTypes[LArgCount])));
-
-    FillChar(Strings, SizeOf(Strings), 0);
-    VarParams := GetDispatchInvokeArgs(CallDesc, Params, Strings, true);
-
-    // What type of invoke is this?
-    case CallDesc^.CallType of
-      CDoMethod:
-        // procedure with N arguments
-        if Dest = nil then
-        begin
-          if not DoProcedure(Source, LIdent, VarParams) then
+    PIdent := @CallDesc^.ArgTypes[LArgCount];
+    LIdent := FixupIdent( UTF8ToString(MarshaledAString(PIdent)) );
+    if LArgCount > 0 then begin
+      SetLength(Strings, LArgCount);
+     {$IFNDEF DELPHI10_4_OR_HIGHER}
+     VarParams := GetDispatchInvokeArgs(CallDesc, Params, PStringRefList(Strings)^, true);
+     {$ELSE}
+     VarParams := GetDispatchInvokeArgs(CallDesc, Params, Strings, true);
+     {$ENDIF}
+    end;
+    try
+      // What type of invoke is this?
+      case CallDesc^.CallType of
+        CDoMethod:
+          // procedure with N arguments
+          if Dest = nil then
           begin
+            if not DoProcedure(Source, LIdent, VarParams) then
+            begin
 
-            // ok maybe its a function but first we must make room for a result
-            VarDataInit(LTemp);
-            try
+              // ok maybe its a function but first we must make room for a result
+              VarDataInit(LTemp);
+              try
 
-              // notate that the destination shouldn't be bothered with
-              // functions can still return stuff, we just do this so they
-              //  can tell that they don't need to if they don't want to
-              SetClearVarToEmptyParam(LTemp);
+                // notate that the destination shouldn't be bothered with
+                // functions can still return stuff, we just do this so they
+                //  can tell that they don't need to if they don't want to
+                SetClearVarToEmptyParam(LTemp);
 
-              // ok lets try for that function
-              if not DoFunction(LTemp, Source, LIdent, VarParams) then
-                RaiseDispError;
-            finally
-              VarDataClear(LTemp);
-            end;
+                // ok lets try for that function
+                if not DoFunction(LTemp, Source, LIdent, VarParams) then
+                  RaiseDispError;
+              finally
+                VarDataClear(LTemp);
+              end;
+            end
           end
-        end
 
-        // property get or function with 0 argument
-        else if LArgCount = 0 then
-        begin
-          if not GetProperty(Dest^, Source, LIdent) and
-             not DoFunction(Dest^, Source, LIdent, VarParams) then
+          // property get or function with 0 argument
+          else if LArgCount = 0 then
+          begin
+            if not GetProperty(Dest^, Source, LIdent) and
+               not DoFunction(Dest^, Source, LIdent, VarParams) then
+              RaiseDispError;
+          end
+
+          // function with N arguments
+          else if not DoFunction(Dest^, Source, LIdent, VarParams) then
             RaiseDispError;
-        end
 
-        // function with N arguments
-        else if not DoFunction(Dest^, Source, LIdent, VarParams) then
-          RaiseDispError;
+        CPropertyGet:
+          if not ((Dest <> nil) and                         // there must be a dest
+                  (LArgCount = 0) and                       // only no args
+                  GetProperty(Dest^, Source, LIdent)) then  // get op be valid
+            RaiseDispError;
 
-      CPropertyGet:
-        if not ((Dest <> nil) and                         // there must be a dest
-                (LArgCount = 0) and                       // only no args
-                GetProperty(Dest^, Source, LIdent)) then  // get op be valid
-          RaiseDispError;
+        CPropertySet:
+          if not ((Dest = nil) and                          // there can't be a dest
+                  (LArgCount = 1) and                       // can only be one arg
+                  SetProperty(Source, LIdent, VarParams[0])) then // set op be valid
+            RaiseDispError;
+      else
+        RaiseDispError;
+      end;
 
-      CPropertySet:
-        if not ((Dest = nil) and                          // there can't be a dest
-                (LArgCount = 1) and                       // can only be one arg
-                SetProperty(Source, LIdent, VarParams[0])) then // set op be valid
-          RaiseDispError;
-    else
-      RaiseDispError;
+    finally
+      PatchedFinalizeDispatchInvokeArgs(CallDesc, VarParams, true);
     end;
 
     for I := 0 to Length(Strings) - 1 do
@@ -1016,13 +1276,12 @@ procedure TPythonVariantType.DispInvoke(Dest: PVarData;
         Break;
       if Strings[I].Ansi <> nil then
         Strings[I].Ansi^ := AnsiString(Strings[I].Wide)
-      else if Strings[I].Unicode <> nil then
-        Strings[I].Unicode^ := UnicodeString(Strings[I].Wide)
+      else
+        if Strings[I].Unicode <> nil then
+          Strings[I].Unicode^ := UnicodeString(Strings[I].Wide)
     end;
-    for I := Low(VarParams) to High(VarParams) do
-      VarDataClear(VarParams[I]);
   end;
-{$ENDIF DELPHIXE2}
+{$ENDIF PATCHEDSYSTEMDISPINVOKE}
 
   procedure GetNamedParams;
   var
@@ -1035,7 +1294,7 @@ procedure TPythonVariantType.DispInvoke(Dest: PVarData;
     SetLength(fNamedParams, CallDesc^.NamedArgCount);
     // Skip function Name
     for I := 0 to CallDesc^.NamedArgCount - 1 do begin
-      LNamePtr := LNamePtr + Succ(StrLen(LNamePtr));
+      LNamePtr := LNamePtr + Succ(Length(LNamePtr));
       fNamedParams[I].Index := I+LNamedArgStart;
       fNamedParams[I].Name  := AnsiString(LNamePtr);
     end;
@@ -1049,34 +1308,32 @@ begin
     if (CallDesc^.CallType = CPropertyGet) and (CallDesc^.ArgCount = 1) then begin
       NewCallDesc := CallDesc^;
       NewCallDesc.CallType := CDoMethod;
-    {$IFDEF DELPHIXE2}
+    {$IFDEF PATCHEDSYSTEMDISPINVOKE}
       PatchedDispInvoke(Dest, Source, @NewCallDesc, Params);
-    {$ELSE DELPHIXE2}
+    {$ELSE PATCHEDSYSTEMDISPINVOKE}
       inherited DispInvoke(Dest, Source, @NewCallDesc, Params);
-    {$ENDIF DELPHIXE2}
+    {$ENDIF PATCHEDSYSTEMDISPINVOKE}
     end else
-      {$IFDEF DELPHIXE2}
+      {$IFDEF PATCHEDSYSTEMDISPINVOKE}
       PatchedDispInvoke(Dest, Source, CallDesc, Params);
-      {$ELSE DELPHIXE2}
+      {$ELSE PATCHEDSYSTEMDISPINVOKE}
       inherited;
-      {$ENDIF DELPHIXE2}
+      {$ENDIF PATCHEDSYSTEMDISPINVOKE}
   finally
     if CallDesc^.NamedArgCount > 0 then SetLength(fNamedParams, 0);
   end;
 end;
 
 {$ELSE USESYSTEMDISPINVOKE}
-procedure TPythonVariantType.DispInvoke(Dest: PVarData;
-  const Source: TVarData; CallDesc: PCallDesc; Params: Pointer);
 begin
   DoDispInvoke(Dest, Source, CallDesc, Params);
 end;
 
 procedure TPythonVariantType.DoDispInvoke(Dest: PVarData;
-  const Source: TVarData; CallDesc: PCallDesc; Params: Pointer);
+  var Source: TVarData; CallDesc: PCallDesc; Params: Pointer);
 type
   PParamRec = ^TParamRec;
-  TParamRec = array[0..3] of LongInt;
+  TParamRec = array[0..3] of Integer;
   TStringDesc = record
     BStr: WideString;
     PStr: PAnsiString;
@@ -1142,9 +1399,7 @@ var
     begin
       if (LArgType = varVariant) and
          (PVarData(LParamPtr^)^.VType = varString)
-         {$IFDEF UNICODE}
            or (PVarData(LParamPtr)^.VType = varUString)
-         {$ENDIF}
       then
         //VarCast(PVariant(ParamPtr^)^, PVariant(ParamPtr^)^, varOleStr);
         VarDataCastTo(PVarData(LParamPtr^)^, PVarData(LParamPtr^)^, varOleStr);
@@ -1155,22 +1410,20 @@ var
     // value is a variant
     else if LArgType = varVariant then
       if (PVarData(LParamPtr)^.VType = varString)
-      {$IFDEF UNICODE}
         or (PVarData(LParamPtr)^.VType = varUString)
-      {$ENDIF}
       then
       begin
         with LStrings[LStrCount] do
         begin
           //BStr := StringToOleStr(AnsiString(PVarData(LParamPtr)^.VString));
-          {$IFDEF UNICODE}
           if (PVarData(LParamPtr)^.VType = varString) then
             BStr := WideString(System.Copy(AnsiString(PVarData(LParamPtr)^.VString), 1, MaxInt))
           else
+            {$IFDEF FPC}
+            BStr := System.Copy(UnicodeString(PVarData(LParamPtr)^.VString), 1, MaxInt);
+            {$ELSE}
             BStr := System.Copy(UnicodeString(PVarData(LParamPtr)^.VUString), 1, MaxInt);
-          {$ELSE}
-          BStr := System.Copy(AnsiString(PVarData(LParamPtr)^.VString), 1, MaxInt);
-          {$ENDIF}
+            {$ENDIF}
           PStr := nil;
           LArguments[I].VType := varOleStr;
           LArguments[I].VOleStr := PWideChar(BStr);
@@ -1340,7 +1593,7 @@ begin
     Result := Assigned(_result);
     if Result then
       try
-        PythonObjectToVarData(Dest, _result, TPythonVarData(V).VPython.PythonAtomCompatible);
+        PyhonVarDataCreate(Dest, _result);
       finally
         Py_XDecRef(_prop);
       end; // of try
@@ -1361,7 +1614,7 @@ begin
     // if the evaluation returned a result
     if Result then
       // convert it into a variant
-      PythonObjectToVarData( Dest, _PyResult, TPythonVarData(V).VPython.PythonAtomCompatible );
+      PyhonVarDataCreate( Dest, _PyResult );
   finally
     GetPythonEngine.Py_XDecRef( _PyResult );
   end; // of try
@@ -1412,7 +1665,6 @@ function TPythonVariantType.EvalPython(const V: TVarData;
     _key, _value : PPyObject;
     _result : Integer;
   begin
-    Result := nil;
     with GetPythonEngine do
     begin
       PyErr_Clear;
@@ -1423,21 +1675,21 @@ function TPythonVariantType.EvalPython(const V: TVarData;
         _value := VarDataToPythonObject(AValue);
         if not Assigned(_value) then
           raise Exception.Create(SCantConvertValueToPythonObject);
-          if PyList_Check(AObject) then
-            _result := PyList_SetItem( AObject, Variant(AKey), _value )
-          else if PyTuple_Check(AObject) then
-            _result := PyTuple_SetItem( AObject, Variant(AKey), _value )
-          else
-            try
-              if PySequence_Check(AObject) <> 0 then
-                _result := PySequence_SetItem(AObject, Variant(AKey), _value)
-              else
-                _result := PyObject_SetItem( AObject, _key, _value );
-            finally
-              Py_XDecRef(_value);
-            end; // of try
-          CheckError;
-          Result := PyInt_FromLong(_result);
+        if PyList_Check(AObject) then
+          _result := PyList_SetItem( AObject, Variant(AKey), _value )
+        else if PyTuple_Check(AObject) then
+          _result := PyTuple_SetItem( AObject, Variant(AKey), _value )
+        else
+          try
+            if PySequence_Check(AObject) <> 0 then
+              _result := PySequence_SetItem(AObject, Variant(AKey), _value)
+            else
+              _result := PyObject_SetItem( AObject, _key, _value );
+          finally
+            Py_XDecRef(_value);
+          end; // of try
+        CheckError;
+        Result := PyInt_FromLong(_result);
       finally
         Py_XDecRef(_key);
       end; // of try
@@ -1464,7 +1716,7 @@ function TPythonVariantType.EvalPython(const V: TVarData;
     end; // of with
   end; // of function
 
-  procedure ExtractSliceIndexes(AObject : PPyObject; const AStart, AEnd: TVarData; var ASliceStart, ASliceEnd : Integer );
+  procedure ExtractSliceIndexes(AObject : PPyObject; const AStart, AEnd: TVarData; out ASliceStart, ASliceEnd : Integer );
   begin
     with GetPythonEngine do
     begin
@@ -1695,8 +1947,6 @@ function TPythonVariantType.GetProperty(var Dest: TVarData;
 var
   _prop : PPyObject;
   _len : Integer;
-  _args : PPyObject;
-  _result : PPyObject;
 begin
   with GetPythonEngine do
   begin
@@ -1719,46 +1969,13 @@ begin
           // convert the length into a Python integer
           _prop := PyInt_FromLong( _len );
         end; // of if
-      end
-      else if SameText(AName, '__asPPyObject__') then // compatibility with PythonAtom.
-      begin                                           // you should use ExtractPythonObjectFrom instead.
-        // clear the error state of Python
-        PyErr_Clear;
-        // return the Python object pointer as an Integer;
-        {$IFDEF CPUX64}
-        _prop := PyInt_FromLong( NativeInt(TPythonVarData(V).VPython.PyObject) );
-        {$ELSE}
-        _prop := PyLong_FromLongLong( NativeInt(TPythonVarData(V).VPython.PyObject) );
-        {$ENDIF}
       end;
-    end // of if
-    // if we found a property that's a callable object and if we're in
-    // compatibility mode with PythonAtom, then return the result of the
-    // execution of the callable object.
-    else if TPythonVarData(V).VPython.PythonAtomCompatible and
-            Assigned(_prop) and (PyErr_Occurred = nil) then
-    begin
-      if PyFunction_Check(_prop) or PyMethod_Check(_prop) then
-      begin
-        _args := PyTuple_New(0);
-        try
-          // call the func or method
-          _result := PyObject_CallObject(_prop, _args);
-          if Assigned(_result) and (PyErr_Occurred = nil) then
-          begin
-            Py_XDecRef(_prop);
-            _prop := _result;
-          end; // of if
-        finally
-          Py_XDecRef(_args);
-        end; // of try
-      end; // of if
     end; // of if
     CheckError;
     Result := Assigned(_prop);
     if Result then
       try
-        PythonObjectToVarData(Dest, _prop, TPythonVarData(V).VPython.PythonAtomCompatible);
+        PyhonVarDataCreate(Dest, _prop);
       finally
         Py_XDecRef(_prop);
       end; // of try
@@ -1776,11 +1993,7 @@ function TPythonVariantType.LeftPromotion(const V: TVarData;
 begin
   { TypeX Op Python }
   if (AOperator = opAdd) and VarDataIsStr(V) then
-    {$IFDEF UNICODE}
     RequiredVarType := varUString
-    {$ELSE}
-    RequiredVarType := varString
-    {$ENDIF}
   else
     RequiredVarType := VarType;
 
@@ -1796,40 +2009,7 @@ begin
   begin
     TPythonVarData(Dest).VType := VarPython;
     TPythonVarData(Dest).VPython := TPythonData.Create(AObject);
-  end; // of if
-end;
-
-// this method increases the refcount of AObject
-procedure TPythonVariantType.PythonObjectToVarData(var Dest: TVarData;
-  AObject: PPyObject; APythonAtomCompatible : Boolean);
-
-  function IsBasicType( AObject : PPyObject ) : Boolean;
-  begin
-    with GetPythonEngine do
-      Result := PyInt_Check(AObject) or
-                PyFloat_Check(AObject) or
-                PyString_Check(AObject) or
-                PyList_Check(AObject) or
-                PyTuple_Check(AObject);
   end;
-
-begin
-  if APythonAtomCompatible and (AObject = GetPythonEngine.Py_None) then
-    VarDataClear(Dest)
-  // if the result is a basic type (integer, float, string or list)
-  else if APythonAtomCompatible and IsBasicType( AObject ) then
-  begin
-    VarDataClear(Dest);
-    // convert it into its associated variant type
-    Variant(Dest) := GetPythonEngine.PyObjectAsVariant(AObject);
-  end
-  else
-  begin
-    // otherwise wrap the result into a new Python variant
-    PyhonVarDataCreate(Dest, AObject);
-    // propagate compatibility mode
-    TPythonVarData(Dest).VPython.fPythonAtomCompatible := APythonAtomCompatible;
-  end; // of else
 end;
 
 function TPythonVariantType.RightPromotion(const V: TVarData;
@@ -1848,7 +2028,7 @@ begin
     Result := False;
 end;
 
-function TPythonVariantType.SetProperty(const V: TVarData;
+function TPythonVariantType.SetProperty({$IFDEF FPC}var{$ELSE}const{$ENDIF} V: TVarData;
   const AName: string; const Value: TVarData): Boolean;
 var
   _newValue : PPyObject;
@@ -1938,13 +2118,6 @@ end;
 constructor TPythonData.Create(AObject: PPyObject);
 begin
   PyObject := AObject;
-  fPythonAtomCompatible := False;
-end;
-
-constructor TPythonData.Create(AObject : PPyObject; APythonAtomCompatible : Boolean);
-begin
-  Create(AObject);
-  fPythonAtomCompatible := APythonAtomCompatible;
 end;
 
 destructor TPythonData.Destroy;
@@ -2177,7 +2350,15 @@ begin
   end; // of with
 end;
 
-function TPythonData.GetAsString: String;
+function TPythonData.GetAsAnsiString: AnsiString;
+begin
+  if Assigned(PyObject) and GetPythonEngine.PyString_CheckExact(PyObject) then
+    Result := GetPythonEngine.PyString_AsString(PyObject)
+  else
+    Result := AnsiString(GetAsString);
+end;
+
+function TPythonData.GetAsString: string;
 begin
   if Assigned(PyObject) then
     Result := GetPythonEngine.PyObjectAsString(PyObject)
@@ -2198,7 +2379,7 @@ begin
   if Assigned(PyObject) and GetPythonEngine.PyUnicode_Check(PyObject) then
     Result := GetPythonEngine.PyUnicode_AsWideString(PyObject)
   else
-    Result := GetAsString;
+    Result := UnicodeString(GetAsString);
 end;
 
 function TPythonData.GreaterOrEqualThan(const Right: TPythonData): Boolean;
@@ -2258,6 +2439,50 @@ begin
     fPyObject := Value;
     Py_XIncRef(fPyObject);
   end;
+end;
+
+{ TVarPyEnumerator }
+
+constructor TVarPyEnumerator.Create(const AValue: Variant);
+begin
+  FIterator := iter(AValue);
+end;
+
+function TVarPyEnumerator.GetCurrent: Variant;
+begin
+  Result := FCurrent;
+end;
+
+function TVarPyEnumerator.MoveNext: Boolean;
+begin
+  Result := True;
+  try
+    FCurrent := BuiltinModule.next(FIterator);
+  except
+    on E: EPyStopIteration do
+    begin
+      Result := False;
+    end
+    else
+      raise;
+  end;
+end;
+
+function VarPyIterate(const AValue: Variant): TVarPyEnumerateHelper;
+begin
+  Result.Create(AValue);
+end;
+
+{ TVarPyEnumerateHelper }
+
+constructor TVarPyEnumerateHelper.Create(const AValue: Variant);
+begin
+  FIterable := AValue;
+end;
+
+function TVarPyEnumerateHelper.GetEnumerator: TVarPyEnumerator;
+begin
+  Result.Create(FIterable);
 end;
 
 initialization
