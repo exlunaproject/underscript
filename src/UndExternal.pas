@@ -26,6 +26,8 @@ type
     function GetFormatedImport(const s: string;v:TUndLuaVariable): string;
     function GetLocalsImport(L: Plua_State; LocalFormatStr: string;
       sl: TStringList): string;
+    function StringEncode(const s:string):string;
+    function StringDecode(const s:string):string;
   public
     constructor Create(L: Plua_State; Lang:TUndLanguageExternal);
     destructor Destroy; override;
@@ -33,7 +35,18 @@ type
     procedure RunScript(L: Plua_State; script: string);
   end;
 
+procedure RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal);
+
 implementation
+
+procedure RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal);
+var
+  imp:TUndExternal;
+begin
+  imp := TUndExternal.Create(L, Lang);
+  imp.RunScript(L, s);
+  imp.Free;
+end;
 
 function CanAddKey(lt: integer; n: string): boolean;
 begin
@@ -55,6 +68,24 @@ begin
   // if n='AST_COMPILE_ERROR_NUMBER' then result:=false;
 end;
 
+function TUndExternal.StringEncode(const s:string):string;
+begin
+  result := s;
+  case fLanguage.StringEncodeFormat of
+    usfBase64: result := base64encode(result);
+    usfHex: result := strtohex(result);
+  end;
+end;
+
+function TUndExternal.StringDecode(const s:string):string;
+begin
+  result := s;
+  case fLanguage.StringEncodeFormat of
+    usfBase64: result := base64decode(result);
+    usfHex: result := hextostr(result);
+  end;
+end;
+
 function TUndExternal.GetFormatedImport(const s: string;v:TUndLuaVariable): string;
 var
  getter:string;
@@ -66,9 +97,9 @@ begin
   result := replacestr(result, '%k', v.name);
   result := replacestr(result, '%t', v.LuaTypeStr);
   if v.luatype = LUA_TSTRING then begin
-   v.value := replacestr(fLanguage.StringFormat,'%s',base64encode(v.value));
-   getter := replacestr(fLanguage.B64Encoder, '%s', getter);
-   v.value := replacestr(fLanguage.B64Decoder, '%s', v.value);
+   v.value := replacestr(fLanguage.StringFormat,'%s',stringencode(v.value));
+   getter := replacestr(fLanguage.StringEncoder, '%s', getter);
+   v.value := replacestr(fLanguage.StringDecoder, '%s', v.value);
   end;
   result := replacestr(result, '%g', getter);
   result := replacestr(result, '%v', v.value);
@@ -234,7 +265,7 @@ begin
         LUA_TNIL:
           pLua_SetLocal(fLuaState,vname,varNull);
         LUA_TSTRING: begin
-          vvalue := base64decode(vvalue);
+          vvalue := stringdecode(vvalue);
           //writeln('setting:'+vname+'='+vvalue);
           pLua_SetLocal(fLuaState,vname,vvalue);
         end;

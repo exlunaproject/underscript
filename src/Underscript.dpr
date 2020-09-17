@@ -94,7 +94,10 @@ uses
 
 type
  TScriptType = (
+  lang_jsnode,
+  lang_jsnodestrict,
   lang_jscript,
+  lang_jsv8,
   lang_pascalpage,
   lang_pascalprog,
   lang_pascalscript,
@@ -106,30 +109,39 @@ type
   lang_vbscript
  );
 
-function lua_run_php(L: plua_State):integer; cdecl;
-var imp:TUndExternal;
+function lua_run_nodejs(L: plua_State):integer; cdecl;
 begin
-  imp := TUndExternal.Create(L, langdef_PHP);
-  imp.RunScript(L, lua_tostring(L,1));
-  imp.Free;
+  RunExternalScript(L, lua_tostring(L,1), langdef_NodeJS);
+  result := 1;
+end;
+
+function lua_run_nodejs_strict(L: plua_State):integer; cdecl;
+begin
+  RunExternalScript(L, lua_tostring(L,1), langdef_NodeJS_Strict);
+  result := 1;
+end;
+
+function lua_run_jsv8(L: plua_State):integer; cdecl;
+begin
+  RunExternalScript(L, lua_tostring(L,1), langdef_V8JS);
+  result := 1;
+end;
+
+function lua_run_php(L: plua_State):integer; cdecl;
+begin
+  RunExternalScript(L, lua_tostring(L,1), langdef_PHP);
   result := 1;
 end;
 
 function lua_run_ruby(L: plua_State):integer; cdecl;
-var imp:TUndExternal;
 begin
-  imp := TUndExternal.Create(L, langdef_Ruby);
-  imp.RunScript(L, lua_tostring(L,1));
-  imp.Free;
+  RunExternalScript(L, lua_tostring(L,1), langdef_Ruby);
   result := 1;
 end;
 
 function lua_run_python(L: plua_State):integer; cdecl;
-var imp:TUndExternal;
 begin
-  imp := TUndExternal.Create(L, langdef_Python);
-  imp.RunScript(L, lua_tostring(L,1));
-  imp.Free;
+  RunExternalScript(L, lua_tostring(L,1), langdef_Python);
   result := 1;
 end;
 
@@ -155,6 +167,9 @@ begin
   // This will execute the script using a installed Python in your environment
   lang_pythonenv: lua_pushcfunction(L,Python_Run);
   {$ENDIF}
+  lang_jsnode: lua_pushcfunction(L, lua_run_nodejs);
+  lang_jsnodestrict: lua_pushcfunction(L, lua_run_nodejs_strict);
+  lang_jsv8: lua_pushcfunction(L, lua_run_jsv8);
   // This will execute the script using an embedded Python (if any)
   lang_python: lua_pushcfunction(L, lua_run_python);
   lang_php: lua_pushcfunction(L, lua_run_php);

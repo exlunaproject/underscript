@@ -15,6 +15,9 @@ const
   // Important: this constant must be have the first letter uppercase because of Ruby compatibility
   cUnd = 'Underscript';
   cUnderSetPrefix='_underscript_set:';
+  cJSHexDecodeFunc = 'function hex2str(h) { var s = ""; for (var i = 0; i < h.length; i += 2) s += String.fromCharCode(parseInt(h.substr(i, 2), 16)); return s; }';
+  cJSHexEncodeFunc = 'function str2hex(s) { var h = ""; for(var i=0;i<s.length;i++) { h += ""+s.charCodeAt(i).toString(16); } return h; }';
+  cJsHexEncodeDecodeFuncs = cJSHexDecodeFunc + cJSHexEncodeFunc;
 
 var
   rudLibName: string = cUnd;
@@ -35,6 +38,9 @@ type
   end;
 
 type
+  TUndStringEncodeFormat = (usfBase64, usfHex);
+
+type
   TUndLanguageExternal = record
    Command: string;
    FileExt: string;
@@ -42,9 +48,10 @@ type
    VarReadFormat: string;
    FuncReadFormat: string;
    FuncWriteFormat: string;
-   B64Encoder: string;
-   B64Decoder: string;
+   StringEncoder: string;
+   StringDecoder: string;
    FormatScript: string;
+   StringEncodeFormat: TUndStringEncodeFormat;
   end;
 
 const
@@ -55,8 +62,8 @@ const
    VarReadFormat: '$%k';
    FuncReadFormat: '$%k = %v;';
    FuncWriteFormat: crlf+'echo("\n%pt=%t,n=%k,v=".%g."\n");';
-   B64Encoder: 'base64_encode(%s)';
-   B64Decoder: 'base64_decode(%s)';
+   StringEncoder: 'base64_encode(%s)';
+   StringDecoder: 'base64_decode(%s)';
    FormatScript: '<?php %s ?>';
  );
 
@@ -68,8 +75,8 @@ const
    VarReadFormat: '%k';
    FuncReadFormat: '%k = %v;';
    FuncWriteFormat: crlf+'puts "\n%pt=%t,n=%k,v="+%g+"\n";';
-   B64Encoder: 'Base64.encode64(%s)';
-   B64Decoder: 'Base64.decode64(%s)';
+   StringEncoder: 'Base64.encode64(%s)';
+   StringDecoder: 'Base64.decode64(%s)';
    FormatScript: 'require "base64"; %s';
  );
 
@@ -81,9 +88,51 @@ const
    VarReadFormat: '%k';
    FuncReadFormat: '%k = %v;';
    FuncWriteFormat: crlf+'print("\n%pt=%t,n=%k,v="+%g+"\n");';
-   B64Encoder: 'str(base64.b64encode(%s.encode("utf-8")),"utf-8")';
-   B64Decoder: 'str(base64.b64decode(%s),"utf-8")';
+   StringEncoder: 'str(base64.b64encode(%s.encode("utf-8")),"utf-8")';
+   StringDecoder: 'str(base64.b64decode(%s),"utf-8")';
    FormatScript: 'import base64; %s';
+ );
+
+const
+ langdef_NodeJS: TUndLanguageExternal = (
+   Command: '%u\nodejs\node.exe';
+   FileExt: '.js';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: '%k = %v;';
+   FuncWriteFormat: crlf+'console.log("\n%pt=%t,n=%k,v="+%g+"\n");';
+   StringEncoder: '(new Buffer(%s).toString("base64"))';
+   StringDecoder: '(new Buffer(%s, "base64").toString("ascii"))';
+   FormatScript: '%s';
+ );
+// Use new Buffer() instead of Buffer.from() so it can be compatible with node
+// versions older than v6
+
+const
+ langdef_NodeJS_Strict: TUndLanguageExternal = (
+   Command: '%u\nodejs\node.exe';
+   FileExt: '.js';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: 'let %k = %v;';
+   FuncWriteFormat: crlf+'console.log("\n%pt=%t,n=%k,v="+%g+"\n");';
+   StringEncoder: '(new Buffer(%s).toString("base64"))';
+   StringDecoder: '(new Buffer(%s, "base64").toString("ascii"))';
+   FormatScript: '''use strict''; %s';
+ );
+
+const
+ langdef_V8JS: TUndLanguageExternal = (
+   Command: '%u\v8js\d8.exe';
+   FileExt: '.js';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: '%k = %v;';
+   FuncWriteFormat: crlf+'print("\n%pt=%t,n=%k,v="+%g+"\n");';
+   StringEncoder: 'str2hex(%s)';
+   StringDecoder: 'hex2str(%s)';
+   FormatScript: cJsHexEncodeDecodeFuncs+' %s';
+   StringEncodeFormat: usfHex;
  );
 
 procedure Und_CustomWrite(L: plua_State; s: String; customfunc: String = '');
