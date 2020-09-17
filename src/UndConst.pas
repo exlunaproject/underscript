@@ -149,6 +149,20 @@ const
    StringEncodeFormat: usfHex;
  );
 
+const
+ langdef_TCL: TUndLanguageExternal = (
+   Command: '%u\tcl\tclsh.exe';
+   FileExt: '.tcl';
+   StringFormat: '"%s"';
+   VarReadFormat: '$%k';
+   FuncReadFormat: 'set %k %v;';
+   FuncWriteFormat: crlf+'puts [join [list "%pt=%t,n=%k,v=" %g] ""];';
+   StringEncoder: '[binary encode hex %s]';
+   StringDecoder: '[binary decode hex %s]';
+   FormatScript: '%s';
+   StringEncodeFormat: usfHex;
+ );
+
 procedure Und_CustomWrite(L: plua_State; s: String; customfunc: String = '');
 procedure Und_CustomWriteLn(L: plua_State; s: String; customfunc: String = '');
 procedure Und_LogError(L: plua_State; line: integer; msg: String);

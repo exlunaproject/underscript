@@ -70,7 +70,7 @@ end;
 
 function TUndExternal.StringEncode(const s:string):string;
 begin
-  result := s;
+  result := trim(s);
   case fLanguage.StringEncodeFormat of
     usfBase64: result := base64encode(result);
     usfHex: result := strtohex(result);
@@ -79,7 +79,7 @@ end;
 
 function TUndExternal.StringDecode(const s:string):string;
 begin
-  result := s;
+  result := trim(s);
   case fLanguage.StringEncodeFormat of
     usfBase64: result := base64decode(result);
     usfHex: result := hextostr(result);
@@ -300,7 +300,6 @@ begin
   sl.Text := script;
   sl.SaveToFile(fn);
   cmd := TCatCSCommand.Create;
-  //cmd.OnOutput := HandleOutput;
   RunCmdWithCallBack(command, fn,
     procedure(const Line: PAnsiChar)
     begin

@@ -5,9 +5,9 @@ library Underscript;
  Copyright (c) 2013-2020 Felipe Daragon
  License: MIT (http://opensource.org/licenses/mit-license.php)
 
- This library adds to Lua the ability to run code written in multiple
- programming languages such as:
- JavaScript, PascalScript, Perl, PHP, Python, Ruby & VBScript
+ This library adds to Lua the ability to run code written in the following
+ programming languages:
+ JavaScript, PascalScript, Perl, PHP, Python, Ruby, TCL, VBScript
 }
 
 {$DEFINE UNDER_ACTIVESCRIPT}
@@ -23,7 +23,7 @@ uses
   uActiveScript, 
   {$ENDIF}  
   {$IFDEF UNDER_PASCAL}
-  uDWS,
+  uPascal_DWS,
   dws2Comp in 'thirdparty\pascal\dws2Comp.pas',
   dws2Compiler in 'thirdparty\pascal\dws2Compiler.pas',
   dws2Exprs in 'thirdparty\pascal\dws2Exprs.pas',
@@ -107,6 +107,7 @@ type
   lang_perlactive,
   lang_php,
   lang_ruby,
+  lang_tcl,
   lang_vbscript
  );
 
@@ -152,6 +153,12 @@ begin
   result := 1;
 end;
 
+function lua_run_tcl(L: plua_State):integer; cdecl;
+begin
+  RunExternalScript(L, lua_tostring(L,1), langdef_TCL);
+  result := 1;
+end;
+
 function lua_getscriptfunc(L: plua_State):integer; cdecl;
 var s:string;
 begin
@@ -182,6 +189,7 @@ begin
   lang_perl: lua_pushcfunction(L, lua_run_perl);
   lang_php: lua_pushcfunction(L, lua_run_php);
   lang_ruby: lua_pushcfunction(L,lua_run_ruby);
+  lang_tcl: lua_pushcfunction(L,lua_run_tcl);
  else
   result:=0;
  end;

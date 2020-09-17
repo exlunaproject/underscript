@@ -10,7 +10,7 @@ unit uActiveScript;
 interface
 
 uses
-  Classes, SysUtils, lua, plua, LuaObject, ActiveX, CatJSRunnerAS, UndHelperUnit,
+  Classes, SysUtils, lua, plua, LuaObject, ActiveX, CatJSRunnerAS, UndHelper_AS,
   CatStrings, UndImporter, UndConst, TypInfo;
 
 const

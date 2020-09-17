@@ -1,6 +1,8 @@
 # Underscript
 
-Underscript is a Lua extension library that allows you to **run a variety of scripting languages from within Lua scripts**. Underscript's scripted operations can be isolated or "connected" with the variables from the Lua state of the host. Currently JavaScript, Pascal, Perl, PHP, Python, Ruby & VBScript are supported.
+Underscript is a Lua extension library that allows you to **run a variety of scripting languages from within Lua scripts**. Underscript's scripted operations can be isolated or "connected" with the variables from the Lua state of the host. 
+
+Currently JavaScript, Pascal, Perl, PHP, Python, Ruby, TCL and VBScript are supported.
 
 ```lua
 require "Underscript"

@@ -8,7 +8,7 @@ unit uPython;
 interface
 
 uses
-  Classes, SysUtils, lua, plua, LuaObject, PythonEngine, UndHelperUnit,
+  Classes, SysUtils, lua, plua, LuaObject, PythonEngine, UndHelper_AS,
   UndImporter, VarPyth, UndConst;
 
 const

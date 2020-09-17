@@ -9,7 +9,7 @@ interface
 
 uses
  Classes, SysUtils, lua, plua, LuaObject, RubyEval, RubyWrapper,
- UndHelperUnit, uConv, UndConst, UndImporter, CatStrings;
+ UndHelper_AS, uConv, UndConst, UndImporter, CatStrings;
 
 type
   TUndRubyWrapper = class(TLuaObject)

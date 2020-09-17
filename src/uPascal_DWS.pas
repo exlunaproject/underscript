@@ -1,4 +1,4 @@
-unit uDWS;
+unit uPascal_DWS;
 {
   UnderScript Delphi Web Script Wrapper
   Copyright (c) 2013-2020 Felipe Daragon

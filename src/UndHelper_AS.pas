@@ -1,4 +1,4 @@
-unit UndHelperUnit;
+unit UndHelper_AS;
 
 {
   UnderScript Helper for ActiveScript Component
