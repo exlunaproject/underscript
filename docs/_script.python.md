@@ -1,6 +1,6 @@
 ## Python Support
 
-### Hello World Example
+### Hello World Example (using embedded Python)
 
 ```lua
 require "Underscript"
@@ -15,4 +15,12 @@ end
 say('Hello World!')
 ```
 
+### Hello World Example (using environment's Python)
+
 Note: The Python installer must be downloaded separately from the [official site](http://python.org/).
+
+```lua
+-- See above example 
+function say(s) _script.pythonenv
+-- ..
+```

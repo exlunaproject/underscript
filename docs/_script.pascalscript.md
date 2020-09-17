@@ -56,4 +56,4 @@ end
 
 ### Credits
 
-Pascal support made possible by the [RemObjects Pascal Script](http://www.remobjects.com/) project.
+Pascal support made possible by the [RemObjects Pascal Script](http://www.remobjects.com/) and DWS projects.

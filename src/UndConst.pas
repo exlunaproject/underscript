@@ -81,6 +81,20 @@ const
  );
 
 const
+ langdef_Perl: TUndLanguageExternal = (
+   Command: '%u\perl\perl.exe';
+   FileExt: '.pl';
+   StringFormat: '"%s"';
+   VarReadFormat: '$%k';
+   FuncReadFormat: '$%k = %v;';
+   FuncWriteFormat: crlf+'print("\n%pt=%t,n=%k,v=".%g."\n");';
+   StringEncoder: 'unpack("H*",%s)';
+   StringDecoder: 'pack("H*",%s)';
+   FormatScript: '%s';
+   StringEncodeFormat: usfHex;
+ );
+
+const
  langdef_Python: TUndLanguageExternal = (
    Command: '%u\python\python.exe';
    FileExt: '.py';

@@ -18,7 +18,7 @@ library Underscript;
 {$DEFINE UNDER_RUBY}  
 
 uses
-  SysUtils, TypInfo, Lua, pLua, pLuaTable, CatTasks, CatCSCommand, UndExternal,
+  SysUtils, TypInfo, Lua, pLua, pLuaTable, CatCSCommand, UndConst, UndExternal,
   {$IFDEF UNDER_ACTIVESCRIPT}  
   uActiveScript, 
   {$ENDIF}  
@@ -81,7 +81,7 @@ uses
   MethodCallBack in 'thirdparty\python\MethodCallBack.pas',
   VarPyth in 'thirdparty\python\VarPyth.pas',
   {$ENDIF}  
-  UndConst;
+  CatTasks;
 
 // Reduces exe size
 {$IFDEF RELEASE}
@@ -104,6 +104,7 @@ type
   lang_python,
   lang_pythonenv,
   lang_perl,
+  lang_perlactive,
   lang_php,
   lang_ruby,
   lang_vbscript
@@ -139,6 +140,12 @@ begin
   result := 1;
 end;
 
+function lua_run_perl(L: plua_State):integer; cdecl;
+begin
+  RunExternalScript(L, lua_tostring(L,1), langdef_Perl);
+  result := 1;
+end;
+
 function lua_run_python(L: plua_State):integer; cdecl;
 begin
   RunExternalScript(L, lua_tostring(L,1), langdef_Python);
@@ -154,7 +161,7 @@ begin
   {$IFDEF UNDER_ACTIVESCRIPT} 
   lang_jscript: lua_pushcfunction(L,JavaScript_Run);
   lang_vbscript: lua_pushcfunction(L,VBScript_Run);
-  lang_perl: lua_pushcfunction(L,PerlScript_Run);
+  lang_perlactive: lua_pushcfunction(L,PerlScript_Run);
   {$ENDIF}    
   {$IFDEF UNDER_PASCAL}
   lang_pascalpage: lua_pushcfunction(L,PascalWebScript_Run);
@@ -172,6 +179,7 @@ begin
   lang_jsv8: lua_pushcfunction(L, lua_run_jsv8);
   // This will execute the script using an embedded Python (if any)
   lang_python: lua_pushcfunction(L, lua_run_python);
+  lang_perl: lua_pushcfunction(L, lua_run_perl);
   lang_php: lua_pushcfunction(L, lua_run_php);
   lang_ruby: lua_pushcfunction(L,lua_run_ruby);
  else

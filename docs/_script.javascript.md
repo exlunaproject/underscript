@@ -1,6 +1,51 @@
-## JavaScript (JScript) Support
+## JavaScript Support
 
-### Function Example
+### Hello World (Using NodeJS)
+
+```lua
+require "Underscript"
+
+-- Prints "Hello World!" in uppercase
+function say(s) _script.jsnode
+ [[
+ console.log(s.toUpperCase()+'!');
+ ]]
+end
+
+say('Hello World')
+```
+
+### Hello World (Using pure V8 engine)
+
+```lua
+require "Underscript"
+
+-- Prints "Hello World!" in uppercase
+function say(s) _script.jsv8
+ [[
+ print(s.toUpperCase()+'!');
+ ]]
+end
+
+say('Hello World')
+```
+
+### Hello World (Using MS JScript)
+
+```lua
+require "Underscript"
+
+-- Prints "Hello World!" in uppercase
+function say(s) _script.jscript
+ [[
+ Underscript.WriteLn(s.toUpperCase()+'!');
+ ]]
+end
+
+say('Hello World')
+```
+
+### Function Example (Using MS JScript)
 
 ```lua
 require "Underscript"
@@ -49,17 +94,3 @@ function encode64(s) _script.jscript
 end
 ```
 
-### Hello World
-
-```lua
-require "Underscript"
-
--- Prints "Hello World!" in uppercase
-function say(s) _script.jscript
- [[
- Underscript.WriteLn(s.toUpperCase()+'!');
- ]]
-end
-
-say('Hello World')
-```
