@@ -113,50 +113,42 @@ type
 
 function lua_run_nodejs(L: plua_State):integer; cdecl;
 begin
-  RunExternalScript(L, lua_tostring(L,1), langdef_NodeJS);
-  result := 1;
+  result := RunExternalScript(L, lua_tostring(L,1), langdef_NodeJS);
 end;
 
 function lua_run_nodejs_strict(L: plua_State):integer; cdecl;
 begin
-  RunExternalScript(L, lua_tostring(L,1), langdef_NodeJS_Strict);
-  result := 1;
+  result := RunExternalScript(L, lua_tostring(L,1), langdef_NodeJS_Strict);
 end;
 
 function lua_run_jsv8(L: plua_State):integer; cdecl;
 begin
-  RunExternalScript(L, lua_tostring(L,1), langdef_V8JS);
-  result := 1;
+  result := RunExternalScript(L, lua_tostring(L,1), langdef_V8JS);
 end;
 
 function lua_run_php(L: plua_State):integer; cdecl;
 begin
-  RunExternalScript(L, lua_tostring(L,1), langdef_PHP);
-  result := 1;
+  result := RunExternalScript(L, lua_tostring(L,1), langdef_PHP);
 end;
 
 function lua_run_ruby(L: plua_State):integer; cdecl;
 begin
-  RunExternalScript(L, lua_tostring(L,1), langdef_Ruby);
-  result := 1;
+  result := RunExternalScript(L, lua_tostring(L,1), langdef_Ruby);
 end;
 
 function lua_run_perl(L: plua_State):integer; cdecl;
 begin
-  RunExternalScript(L, lua_tostring(L,1), langdef_Perl);
-  result := 1;
+  result := RunExternalScript(L, lua_tostring(L,1), langdef_Perl);
 end;
 
 function lua_run_python(L: plua_State):integer; cdecl;
 begin
-  RunExternalScript(L, lua_tostring(L,1), langdef_Python);
-  result := 1;
+  result := RunExternalScript(L, lua_tostring(L,1), langdef_Python);
 end;
 
 function lua_run_tcl(L: plua_State):integer; cdecl;
 begin
-  RunExternalScript(L, lua_tostring(L,1), langdef_TCL);
-  result := 1;
+  result := RunExternalScript(L, lua_tostring(L,1), langdef_TCL);
 end;
 
 function lua_getscriptfunc(L: plua_State):integer; cdecl;

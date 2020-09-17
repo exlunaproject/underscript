@@ -77,15 +77,27 @@ begin
   result := 1;
 end;  }
 
-function PascalClassic_Run(L: plua_State):integer; cdecl; // Main function for execution
-var obj:TUndPascal; r:variant; script:string; importer:TUndImporter;
-  procedure OutputMessages;
+// Main function for execution of Pascal script
+function PascalClassic_Run(L: plua_State):integer; cdecl;
+var
+  r: TUndScriptResult;
+  obj:TUndPascal;
+  rv:variant;
+  script:string;
+  importer:TUndImporter;
+  procedure HandleError;
   var i: Longint;
   begin
-    for i := 0 to obj.PSScript.CompilerMessageCount - 1 do
-    Und_LogError(L,i,'Pascal: '+ obj.PSScript.CompilerErrorToStr(i));
+    r.success := false;
+    r.errormessage := emptystr;
+    for i := 0 to obj.PSScript.CompilerMessageCount - 1 do begin
+      Und_LogError(L,i,'Pascal: '+ obj.PSScript.CompilerErrorToStr(i));
+      r.errormessage := r.errormessage+crlf+obj.PSScript.CompilerErrorToStr(i);
+    end;
   end;
 begin
+  r.success := true;
+  r.scriptsuccess := true;
   obj := TUndPascal.Create(L);
   importer:=TUndImporter.create(L);
   //importer.EnableDebug:=true;
@@ -97,11 +109,11 @@ begin
   if obj.PSScript.Compile then begin
      obj.success:= obj.PSScript.Execute;
   end else obj.Success:=false;
-  if obj.success=false then OutputMessages;//writeln(obj.errormsg);
+  if obj.success=false then HandleError;//writeln(obj.errormsg);
   //OutputMessages;
   obj.free;
   importer.free;
-  //plua_pushvariant(L, r);
+  Und_PushScriptResult(L, r);
   result:=1;
 end;
 

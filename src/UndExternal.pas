@@ -11,7 +11,7 @@ interface
 
 uses
   Classes, Lua, pLua, Variants, SysUtils, CatStrings, CatCSCommand, CatFiles,
-  CatStringLoop, UndConst;
+  CatStringLoop, CatUtils, UndConst;
 
 type
   TUndExternal = class
@@ -32,19 +32,19 @@ type
     constructor Create(L: Plua_State; Lang:TUndLanguageExternal);
     destructor Destroy; override;
     function GetScript(L: Plua_State; script: string): string;
-    procedure RunScript(L: Plua_State; script: string);
+    function RunScript(L: Plua_State; script: string): integer;
   end;
 
-procedure RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal);
+function RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal):integer;
 
 implementation
 
-procedure RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal);
+function RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal):integer;
 var
   imp:TUndExternal;
 begin
   imp := TUndExternal.Create(L, Lang);
-  imp.RunScript(L, s);
+  result := imp.RunScript(L, s);
   imp.Free;
 end;
 
@@ -96,10 +96,13 @@ begin
   result := replacestr(result, '%p', cUnderSetPrefix);
   result := replacestr(result, '%k', v.name);
   result := replacestr(result, '%t', v.LuaTypeStr);
-  if v.luatype = LUA_TSTRING then begin
-   v.value := replacestr(fLanguage.StringFormat,'%s',stringencode(v.value));
-   getter := replacestr(fLanguage.StringEncoder, '%s', getter);
-   v.value := replacestr(fLanguage.StringDecoder, '%s', v.value);
+  case v.luatype of
+  LUA_TNIL: v.value := fLanguage.NilKeyword;
+  LUA_TSTRING: begin
+    v.value := replacestr(fLanguage.StringFormat,'%s',stringencode(v.value));
+    getter := replacestr(fLanguage.StringEncoder, '%s', getter);
+    v.value := replacestr(fLanguage.StringDecoder, '%s', v.value);
+   end;
   end;
   result := replacestr(result, '%g', getter);
   result := replacestr(result, '%v', v.value);
@@ -271,21 +274,26 @@ begin
         end;
       end;
     end else begin
-      if rudCustomFunc_WriteLn <> emptystr then
-      Und_CustomWriteLn(L,slp.Current,rudCustomFunc_WriteLn);
-      //writeln(slp.Current);
+
+      if rudCustomFunc_WriteLn <> emptystr then begin
+        Und_CustomWriteLn(L,slp.Current,rudCustomFunc_WriteLn);
+      end;
     end;
   end;
   slp.Free;
   sl.Free;
 end;
 
-procedure TUndExternal.RunScript(L: Plua_State; script: string);
+function TUndExternal.RunScript(L: Plua_State; script: string):integer;
 var
+  r: TUndScriptResult;
   cmd: TCatCSCommand;
   fn, underpath, command: string;
   sl: TStringList;
 begin
+  result := 1;
+  r.success := true;
+  r.scriptsuccess := true;
   //path := 'R:\Win64\Extensions\underscript\';
   underpath := extractfilepath(paramstr(0))+'Extensions\underscript';
   command := replacestr(fLanguage.Command, '%u', underpath);
@@ -299,16 +307,22 @@ begin
   sl := TStringList.Create;
   sl.Text := script;
   sl.SaveToFile(fn);
-  cmd := TCatCSCommand.Create;
-  RunCmdWithCallBack(command, fn,
-    procedure(const Line: PAnsiChar)
-    begin
-      HandleOutput(L, String(Line));
-    end
-  );
+  if fileexists(command) then begin
+    cmd := TCatCSCommand.Create;
+    RunCmdWithCallBack(command, fn,
+      procedure(const Line: PAnsiChar)
+      begin
+        HandleOutput(L, String(Line));
+      end
+    );
   cmd.free;
+  end else begin
+    r.success := false;
+    r.errormessage := command+' not available in path.';
+  end;
   sl.free;
   deletefile(fn);
+  Und_PushScriptResult(L, r);
 end;
 
 constructor TUndExternal.Create(L: Plua_State; Lang:TUndLanguageExternal);

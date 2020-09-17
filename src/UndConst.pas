@@ -9,7 +9,7 @@ unit UndConst;
 interface
 
 uses
-  SysUtils, Lua, CatStrings;
+  SysUtils, Lua, pLua, pLuaTable, CatStrings, CatUtils;
 
 const
   // Important: this constant must be have the first letter uppercase because of Ruby compatibility
@@ -28,6 +28,15 @@ var
   rudCustomFunc_WriteLn: string = '';
   rudCustomFunc_Write: string = '';
   rudCustomFunc_LogError: string = '';
+
+type
+  TUndScriptResult = record
+   success:boolean;
+   errormessage:string;
+   scriptsuccess:boolean;
+   scripterrors: string;
+   expressionresult:string;
+  end;
 
 type
   TUndLuaVariable = record
@@ -51,6 +60,7 @@ type
    StringEncoder: string;
    StringDecoder: string;
    FormatScript: string;
+   NilKeyword: string;
    StringEncodeFormat: TUndStringEncodeFormat;
   end;
 
@@ -65,6 +75,7 @@ const
    StringEncoder: 'base64_encode(%s)';
    StringDecoder: 'base64_decode(%s)';
    FormatScript: '<?php %s ?>';
+   NilKeyword: 'NULL';
  );
 
 const
@@ -78,7 +89,9 @@ const
    StringEncoder: 'Base64.encode64(%s)';
    StringDecoder: 'Base64.decode64(%s)';
    FormatScript: 'require "base64"; %s';
+   NilKeyword: '""';
  );
+ // FIXME: nil in NilKeyword generating conversion error for Ruby
 
 const
  langdef_Perl: TUndLanguageExternal = (
@@ -91,6 +104,7 @@ const
    StringEncoder: 'unpack("H*",%s)';
    StringDecoder: 'pack("H*",%s)';
    FormatScript: '%s';
+   NilKeyword: 'undef';
    StringEncodeFormat: usfHex;
  );
 
@@ -105,6 +119,7 @@ const
    StringEncoder: 'str(base64.b64encode(%s.encode("utf-8")),"utf-8")';
    StringDecoder: 'str(base64.b64decode(%s),"utf-8")';
    FormatScript: 'import base64; %s';
+   NilKeyword: 'None';
  );
 
 const
@@ -118,6 +133,7 @@ const
    StringEncoder: '(new Buffer(%s).toString("base64"))';
    StringDecoder: '(new Buffer(%s, "base64").toString("ascii"))';
    FormatScript: '%s';
+   NilKeyword: 'null';
  );
 // Use new Buffer() instead of Buffer.from() so it can be compatible with node
 // versions older than v6
@@ -133,6 +149,7 @@ const
    StringEncoder: '(new Buffer(%s).toString("base64"))';
    StringDecoder: '(new Buffer(%s, "base64").toString("ascii"))';
    FormatScript: '''use strict''; %s';
+   NilKeyword: 'null';
  );
 
 const
@@ -146,6 +163,7 @@ const
    StringEncoder: 'str2hex(%s)';
    StringDecoder: 'hex2str(%s)';
    FormatScript: cJsHexEncodeDecodeFuncs+' %s';
+   NilKeyword: 'null';
    StringEncodeFormat: usfHex;
  );
 
@@ -160,36 +178,50 @@ const
    StringEncoder: '[binary encode hex %s]';
    StringDecoder: '[binary decode hex %s]';
    FormatScript: '%s';
+   NilKeyword: '""';
    StringEncodeFormat: usfHex;
  );
 
 procedure Und_CustomWrite(L: plua_State; s: String; customfunc: String = '');
 procedure Und_CustomWriteLn(L: plua_State; s: String; customfunc: String = '');
 procedure Und_LogError(L: plua_State; line: integer; msg: String);
+procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult);
+procedure RedirectIO(const b:boolean);
 procedure SetCustomLibName;
 procedure SetCustomModuleName(name:string);
-procedure RedirectIO(b:boolean);
 
 
 implementation
+
+procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult);
+begin
+ lua_newtable(L);
+ plua_SetFieldValue(L, 'success', res.success);
+ plua_SetFieldValue(L, 'errormsg', res.ErrorMessage);
+ plua_SetFieldValue(L, 'expresult', res.expressionresult);
+end;
 
 procedure Und_LogError(L: plua_State; line: integer; msg: String);
 begin
   if rudCustomFunc_LogError = emptystr then
     exit;
-  lua_getglobal(L, PAnsiChar(rudCustomFunc_LogError));
-  lua_pushinteger(L, line);
-  lua_pushstring(L, msg);
-  lua_pcall(L, 2, 0, 0)
+  if plua_functionexists(L, rudCustomFunc_LogError) = true then begin
+    lua_getglobal(L, PAnsiChar(AnsiString(rudCustomFunc_LogError)));
+    lua_pushinteger(L, line);
+    lua_pushstring(L, msg);
+    lua_pcall(L, 2, 0, 0)
+  end;
 end;
 
 procedure Und_CustomWrite(L: plua_State; s: String; customfunc: String = '');
 begin
   if customfunc <> emptystr then
   begin
-    lua_getglobal(L, PAnsiChar(customfunc));
-    lua_pushstring(L, s);
-    lua_pcall(L, 1, 0, 0);
+    if plua_functionexists(L, customfunc) = true then begin
+      lua_getglobal(L, PAnsiChar(AnsiString(customfunc)));
+      lua_pushstring(L, s);
+      lua_pcall(L, 1, 0, 0);
+    end;
   end
   else
     system.Write(s);
@@ -199,22 +231,19 @@ procedure Und_CustomWriteLn(L: plua_State; s: String; customfunc: String = '');
 begin
   if customfunc <> emptystr then
   begin
-    lua_getglobal(L, PAnsiChar(customfunc));
-    lua_pushstring(L, s);
-    lua_pcall(L, 1, 0, 0);
+    //OutDebug('checking existance of:'+customfunc);
+    if plua_functionexists(L, customfunc) = true then begin
+      //OutDebug('found writeln function!');
+      lua_getglobal(L, PAnsiChar(AnsiString(customfunc)));
+      lua_pushstring(L, s);
+      lua_pcall(L, 1, 0, 0);
+    end;
   end
   else
     system.WriteLn(s);
 end;
 
-procedure SetCustomLibName;
-begin
- rudCustomFunc_WriteLn :=lowercase(rudLibName) +'_writeln';
- rudCustomFunc_Write   :=lowercase(rudLibName)   +'_write';
- rudCustomFunc_LogError:=lowercase(rudLibName)+'_logerror';
-end;
-
-procedure RedirectIO(b:boolean);
+procedure RedirectIO(const b:boolean);
 begin
  if b = true then
   SetCustomLibName
@@ -225,9 +254,18 @@ begin
  end;
 end;
 
+procedure SetCustomLibName;
+begin
+ rudCustomFunc_WriteLn :=lowercase(rudLibName) +'_writeln';
+ rudCustomFunc_Write   :=lowercase(rudLibName)   +'_write';
+ rudCustomFunc_LogError:=lowercase(rudLibName)+'_logerror';
+end;
+
 procedure SetCustomModuleName(name:string);
 begin
- rudLibName := name; if rudCustomFunc_WriteLn<>emptystr then SetCustomLibName;
+ rudLibName := name;
+ if rudCustomFunc_WriteLn<>emptystr then
+   SetCustomLibName;
 end;
 
 // ------------------------------------------------------------------------//

@@ -4,25 +4,20 @@ unit UndHelper_AS;
   UnderScript Helper for ActiveScript Component
   Copyright (c) 2013-2014 Felipe Daragon
   License: MIT (http://opensource.org/licenses/mit-license.php)
-
-  Based on psvScriptObj.pas
 }
 
 interface
 
 uses
-  ObjComAuto, Lua, pLua, Variants, CatJSON, SysUtils, UndConst;
+  ObjComAuto, Lua, pLua, Variants, CatJSON, CatUtils, SysUtils, UndConst;
 
 type
 {$METHODINFO ON}
   TUndHelper = class(TObjectDispatch, IDispatch)
   protected
-
   public
     LuaState: PLua_State;
     constructor Create;
-    procedure Write(s: String);
-    procedure WriteLn(s: String);
     procedure Run(Script: String);
     procedure FindFunc(FuncName: String); // experimental
     procedure FindModFunc(TableName: String; FuncName: String); // experimental
@@ -32,6 +27,8 @@ type
     procedure SetG(valName: String; const AValue: Variant);
     function GetL(valName: String): Variant;
     procedure SetL(valName: String; const AValue: Variant);
+    procedure Write(s: String);
+    procedure WriteLn(s: String);
   published
   end;
 {$METHODINFO OFF}
@@ -40,8 +37,6 @@ var
   UndHelper: TUndHelper;
 
 implementation
-
-{ TpsvAppHelper }
 
 constructor TUndHelper.Create;
 begin
@@ -138,8 +133,9 @@ begin
   Und_CustomWrite(LuaState, s, rudCustomFunc_Write);
 end;
 
-procedure TUndHelper.writeln(s: String);
+procedure TUndHelper.WriteLn(s: String);
 begin
+  //OutDebug('printwriteln:'+s+';expecting: '+rudCustomFunc_WriteLn);
   Und_CustomWriteLn(LuaState, s, rudCustomFunc_WriteLn);
 end;
 

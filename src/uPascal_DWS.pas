@@ -59,19 +59,21 @@ implementation
 
 function DWSScript_Run(L: Plua_State; isfilter: Boolean): integer; cdecl;
 var
+  r: TUndScriptResult;
   obj: TUndDWS;
-  r: Variant;
   script, result_str: string;
   importer: TUndImporter;
   i: integer;
 begin
+  r.success := true;
+  r.scriptsuccess := true;
   obj := TUndDWS.Create(L);
   importer := TUndImporter.Create(L);
   importer.EnableDebug := false;
   importer.FuncReadFormat := 'var %k:%t;%k := ' + rudLibName + '.GetL(''%k'');';
   importer.FuncWriteFormat := crlf + rudLibName + '.SetL(''%k'',%k);';
   if isfilter then
-  begin // import not working... see later why
+  begin // TODO: check if import is working in filter mode
     obj.dws1.Config.Filter := obj.dwsfilter1;
     importer.FuncReadFormat := '<% ' + importer.FuncReadFormat + ' %>';
     importer.FuncWriteFormat := '<%' + importer.FuncWriteFormat + '%>';
@@ -81,7 +83,6 @@ begin
     script := importer.GetScript(L, script);
   except
   end; // eats any exception
-  // Undhelper.WriteLn('script:'+script); //debug
 
   try
     obj.FPrg.Free;
@@ -92,6 +93,8 @@ begin
   obj.FPrg := obj.dws1.Compile(script);
   for i := 0 to obj.FPrg.Msgs.Count - 1 do
   begin
+    r.success := false;
+    r.errormessage := obj.FPrg.Msgs.ToString;
     if rudCustomFunc_LogError <> emptystr then
       Und_LogError(L, -1, obj.FPrg.Msgs[i].AsInfo)
     else
@@ -108,7 +111,7 @@ begin
 
   obj.Free;
   importer.Free;
-  // plua_pushvariant(L, r);
+  Und_PushScriptResult(L, r);
   Result := 1;
 end;
 

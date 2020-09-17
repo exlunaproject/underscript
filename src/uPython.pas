@@ -51,11 +51,14 @@ implementation
 function Python_Run(L: Plua_State): integer; cdecl;
 // Main function for execution
 var
+  r: TUndScriptResult;
   obj: TUndPython;
-  r: Variant;
+  //rv: Variant;
   script: string;
   importer: TUndImporter;
 begin
+  r.success := true;
+  r.scriptsuccess := true;
   obj := TUndPython.Create(L);
   importer := TUndImporter.Create(L);
   importer.EnableDebug:=false;
@@ -67,8 +70,11 @@ begin
   try
     obj.PyEngine.ExecString(script);
   except
-    on E: Exception do
+    on E: Exception do begin
+      r.success := false;
+      r.errormessage := E.Message;
       Und_LogError(L, -1, 'Python: ' + E.Message);
+    end;
   end;
   { obj.PSScript.Script.Text:=script;
     if obj.PSScript.Compile then begin
@@ -77,7 +83,7 @@ begin
 
   obj.free;
   importer.free;
-  // plua_pushvariant(L, r);
+  Und_PushScriptResult(L, r);
   result := 1;
 end;
 
