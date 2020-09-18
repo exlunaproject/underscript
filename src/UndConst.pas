@@ -23,7 +23,7 @@ var
   rudLibName: string = cUnd;
   // this can be changed during runtime via .options table
   rudImportVariables: boolean = true;
-  rudImportGlobals: boolean = true;
+  rudImportGlobals: boolean = false;
   rudImportLocals: boolean = true;
   rudCustomFunc_WriteLn: string = '';
   rudCustomFunc_Write: string = '';
@@ -207,7 +207,7 @@ begin
     exit;
   if plua_functionexists(L, rudCustomFunc_LogError) = true then begin
     lua_getglobal(L, PAnsiChar(AnsiString(rudCustomFunc_LogError)));
-    lua_pushinteger(L, line);
+    plua_pushintnumber(L, line);
     lua_pushstring(L, msg);
     lua_pcall(L, 2, 0, 0)
   end;
@@ -231,9 +231,9 @@ procedure Und_CustomWriteLn(L: plua_State; s: String; customfunc: String = '');
 begin
   if customfunc <> emptystr then
   begin
-    //OutDebug('checking existance of:'+customfunc);
+    OutDebug('checking existance of:'+customfunc);
     if plua_functionexists(L, customfunc) = true then begin
-      //OutDebug('found writeln function!');
+      OutDebug('writeln to func:'+s);
       lua_getglobal(L, PAnsiChar(AnsiString(customfunc)));
       lua_pushstring(L, s);
       lua_pcall(L, 1, 0, 0);
