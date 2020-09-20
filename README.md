@@ -32,8 +32,8 @@ function echo(s) _script.php
 end
 ```
 
-All global and local Lua variables (string, number, boolean and nil) are
-automatically made accessible from within the code just like if they were part of the Lua script that is running it, as shown in the examples above. If you prefer, connected global or local variables can be disabled (see **/docs/options.md**)
+All local Lua variables (string, number, boolean and nil) are
+automatically made accessible from within the code just like if they were part of the Lua script that is running it, as shown in the examples above. If you prefer, connected variables can be disabled or enabled, including for global variables (see **/docs/options.md**)
 
 **Case Sensitiveness in Pascal and VBScript** - PascalScript and VBScript are case-insensitive. When using them avoid using Lua variables with the same name but different case.
 

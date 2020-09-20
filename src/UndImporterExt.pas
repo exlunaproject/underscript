@@ -1,4 +1,4 @@
-unit UndExternal;
+unit UndImporterExt;
 
 {
   UnderScript External Importer
@@ -288,19 +288,21 @@ function TUndExternal.RunScript(L: Plua_State; script: string):integer;
 var
   r: TUndScriptResult;
   cmd: TCatCSCommand;
-  fn, underpath, command: string;
+  fn, progdir, underpath, command: string;
   sl: TStringList;
 begin
   result := 1;
   r.success := true;
-  r.scriptsuccess := true;
   //path := 'R:\Win64\Extensions\underscript\';
-  underpath := extractfilepath(paramstr(0))+'Extensions\underscript';
-  command := replacestr(fLanguage.Command, '%u', underpath);
+  progdir := extractfilepath(paramstr(0));
+  underpath := progdir+'Extensions\underscript';
+  command := fLanguage.Command;
+  command := replacestr(command, '%u', underpath);
+  command := replacestr(command, '%p', progdir);
   script:=(GetScript(L, script));
 
   if pos('%',fLanguage.FormatScript) <> 0 then
-  script := format(fLanguage.FormatScript,[script]);
+  script := replacestr(fLanguage.FormatScript, '%s', script);
   //writeln(script);
 
   fn := GetTempFile(fLanguage.FileExt);

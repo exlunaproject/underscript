@@ -7,7 +7,8 @@ library Underscript;
 
  This library adds to Lua the ability to run code written in the following
  programming languages:
- JavaScript, PascalScript, Perl, PHP, Python, Ruby, TCL, VBScript
+ JavaScript, PascalScript, Perl, PHP, Python, Ruby, TCL, VBScript, LuaJIT and
+ various versions of Lua itself (5.1 to 5.4)
 }
 
 {$DEFINE UNDER_ACTIVESCRIPT}
@@ -18,7 +19,7 @@ library Underscript;
 {$DEFINE UNDER_RUBY}  
 
 uses
-  SysUtils, TypInfo, Lua, pLua, pLuaTable, CatCSCommand, UndConst, UndExternal,
+  SysUtils, TypInfo, Lua, pLua, pLuaTable, CatCSCommand, UndConst, UndScriptExt,
   {$IFDEF UNDER_ACTIVESCRIPT}  
   uActiveScript, 
   {$ENDIF}  
@@ -92,63 +93,24 @@ uses
 
 {$R *.res}
 
-type
- TScriptType = (
-  lang_jsnode,
-  lang_jsnodestrict,
-  lang_jscript,
-  lang_jsv8,
-  lang_pascalpage,
-  lang_pascalprog,
-  lang_pascalscript,
-  lang_python,
-  lang_pythonenv,
-  lang_perl,
-  lang_perlactive,
-  lang_php,
-  lang_ruby,
-  lang_tcl,
-  lang_vbscript
- );
-
-function lua_run_nodejs(L: plua_State):integer; cdecl;
+function lua_run_luacode(L: plua_State):integer; cdecl;
+var
+  r: TUndScriptResult;
+  script:string;
+  error: integer;
 begin
-  result := RunExternalScript(L, lua_tostring(L,1), langdef_NodeJS);
-end;
-
-function lua_run_nodejs_strict(L: plua_State):integer; cdecl;
-begin
-  result := RunExternalScript(L, lua_tostring(L,1), langdef_NodeJS_Strict);
-end;
-
-function lua_run_jsv8(L: plua_State):integer; cdecl;
-begin
-  result := RunExternalScript(L, lua_tostring(L,1), langdef_V8JS);
-end;
-
-function lua_run_php(L: plua_State):integer; cdecl;
-begin
-  result := RunExternalScript(L, lua_tostring(L,1), langdef_PHP);
-end;
-
-function lua_run_ruby(L: plua_State):integer; cdecl;
-begin
-  result := RunExternalScript(L, lua_tostring(L,1), langdef_Ruby);
-end;
-
-function lua_run_perl(L: plua_State):integer; cdecl;
-begin
-  result := RunExternalScript(L, lua_tostring(L,1), langdef_Perl);
-end;
-
-function lua_run_python(L: plua_State):integer; cdecl;
-begin
-  result := RunExternalScript(L, lua_tostring(L,1), langdef_Python);
-end;
-
-function lua_run_tcl(L: plua_State):integer; cdecl;
-begin
-  result := RunExternalScript(L, lua_tostring(L,1), langdef_TCL);
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then begin
+   r.success := true;
+   script := lua_tostring(L,1);
+   luaL_loadbuffer(L, pAnsiChar(ansistring(script)), Length(ansistring(script)), pAnsiChar(''));
+   error := lua_pcall(L, 0, 0, 0);
+   if(error <> 0) then begin
+    r.success := false;
+    r.errormessage := lua_tostring(L, -1);
+    lua_pop(L, 1);
+   end;
+   Und_PushScriptResult(L, r);
+  end;
 end;
 
 function lua_getscriptfunc(L: plua_State):integer; cdecl;
@@ -157,11 +119,18 @@ begin
  result:=1;
  s:=lua_tostring(L,2);
  case TScriptType(GetEnumValue(TypeInfo(TScriptType), 'lang_'+lowercase(s))) of
-  {$IFDEF UNDER_ACTIVESCRIPT} 
+  lang_lua: lua_pushcfunction(L,lua_run_luav51);
+  lang_luain: lua_pushcfunction(L,lua_run_luacode);
+  lang_luajit: lua_pushcfunction(L,lua_run_luajit);
+  lang_luav51: lua_pushcfunction(L,lua_run_luav51);
+  lang_luav52: lua_pushcfunction(L,lua_run_luav52);
+  lang_luav53: lua_pushcfunction(L,lua_run_luav53);
+  lang_luav54: lua_pushcfunction(L,lua_run_luav54);
+  {$IFDEF UNDER_ACTIVESCRIPT}
   lang_jscript: lua_pushcfunction(L,JavaScript_Run);
   lang_vbscript: lua_pushcfunction(L,VBScript_Run);
   lang_perlactive: lua_pushcfunction(L,PerlScript_Run);
-  {$ENDIF}    
+  {$ENDIF}
   {$IFDEF UNDER_PASCAL}
   lang_pascalpage: lua_pushcfunction(L,PascalWebScript_Run);
   lang_pascalscript: lua_pushcfunction(L,PascalScript_Run);

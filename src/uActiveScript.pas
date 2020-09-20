@@ -86,7 +86,6 @@ var
   eh: TScriptErrorHandler;
 begin
   r.success := true;
-  r.scriptsuccess := true;
   CoInitialize(nil);
   eh := TScriptErrorHandler.create;
   Importer := TUndImporter.create(L);
@@ -117,10 +116,8 @@ begin
     end;
   except
   end;
-  r.scriptsuccess := obj.asw_success;
-  r.scripterrors := obj.errors.Text;
 
-  if r.scriptsuccess = false then
+  if obj.asw_success = false then
   begin
     r.success := false;
     r.errormessage := obj.errors.Text;
@@ -136,55 +133,65 @@ end;
 // JavaScript Functions
 function JavaScript_Run(L: plua_State): integer; cdecl;
 begin
-  result := Script_Run(L, lua_tostring(L, 1), cDefaultLanguage);
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    Script_Run(L, lua_tostring(L, 1), cDefaultLanguage);
 end;
 
 function JavaScript_Eval(L: plua_State): integer; cdecl;
 begin
-  result := Script_Run(L, lua_tostring(L, 1), cDefaultLanguage, true);
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    Script_Run(L, lua_tostring(L, 1), cDefaultLanguage, true);
 end;
 
 // VBScript Functions
 function VBScript_Run(L: plua_State): integer; cdecl;
 begin
-  result := Script_Run(L, lua_tostring(L, 1), 'VBScript');
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    Script_Run(L, lua_tostring(L, 1), 'VBScript');
 end;
 
 function VBScript_Eval(L: plua_State): integer; cdecl;
 begin
-  result := Script_Run(L, lua_tostring(L, 1), 'VBScript', true);
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    Script_Run(L, lua_tostring(L, 1), 'VBScript', true);
 end;
 
 // PerlScript Functions
 function PerlScript_Run(L: plua_State): integer; cdecl;
 begin
-  result := Script_Run(L, lua_tostring(L, 1), 'PerlScript');
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    Script_Run(L, lua_tostring(L, 1), 'PerlScript');
 end;
 
 function PerlScript_Eval(L: plua_State): integer; cdecl;
 begin
-  result := Script_Run(L, lua_tostring(L, 1), 'PerlScript', true);
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    Script_Run(L, lua_tostring(L, 1), 'PerlScript', true);
 end;
 
 // LuaScript Functions
 function LuaScript_Run(L: plua_State): integer; cdecl;
 begin
-  result := Script_Run(L, lua_tostring(L, 1), 'LuaScript');
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    Script_Run(L, lua_tostring(L, 1), 'LuaScript');
 end;
 
 function LuaScript_Eval(L: plua_State): integer; cdecl;
 begin
-  result := Script_Run(L, lua_tostring(L, 1), 'LuaScript', true);
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    Script_Run(L, lua_tostring(L, 1), 'LuaScript', true);
 end;
 
 // ActiveScript Functions // eg:  Und.ActiveScript.Run('LuaScript','(someluascript...)')
 function ActiveScript_Run(L: plua_State): integer; cdecl;
 begin
-  result := Script_Run(L, lua_tostring(L, 2), lua_tostring(L, 1));
+  if plua_validateargs(L, result, [LUA_TSTRING, LUA_TSTRING]).OK then
+    Script_Run(L, lua_tostring(L, 2), lua_tostring(L, 1));
 end;
 
 function ActiveScript_Eval(L: plua_State): integer; cdecl;
 begin
+  if plua_validateargs(L, result, [LUA_TSTRING, LUA_TSTRING]).OK then
   result := Script_Run(L, lua_tostring(L, 2), lua_tostring(L, 1), true);
 end;
 

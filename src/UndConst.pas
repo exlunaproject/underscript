@@ -11,10 +11,39 @@ interface
 uses
   SysUtils, Lua, pLua, pLuaTable, CatStrings, CatUtils;
 
+type
+ TScriptType = (
+  lang_jsnode,
+  lang_jsnodestrict,
+  lang_jscript,
+  lang_jsv8,
+  lang_lua,
+  lang_luain,
+  lang_luajit,
+  lang_luav51,
+  lang_luav52,
+  lang_luav53,
+  lang_luav54,
+  lang_pascalpage,
+  lang_pascalprog,
+  lang_pascalscript,
+  lang_python,
+  lang_pythonenv,
+  lang_perl,
+  lang_perlactive,
+  lang_php,
+  lang_ruby,
+  lang_tcl,
+  lang_vbscript
+ );
+
 const
   // Important: this constant must be have the first letter uppercase because of Ruby compatibility
   cUnd = 'Underscript';
   cUnderSetPrefix='_underscript_set:';
+  cLuaHexDecodeFunc = 'function string.fromhex(s) return (s:gsub("..", function (cc) return string.char(tonumber(cc, 16)) end)) end;';
+  cLuaHexEncodeFunc = 'function string.tohex(s) return (s:gsub(".", function (c) return string.format("%02X", string.byte(c)) end)) end;';
+  cLuaHexEncodeDecodeFuncs = cLuaHexDecodeFunc + cLuaHexEncodeFunc;
   cJSHexDecodeFunc = 'function hex2str(h) { var s = ""; for (var i = 0; i < h.length; i += 2) s += String.fromCharCode(parseInt(h.substr(i, 2), 16)); return s; }';
   cJSHexEncodeFunc = 'function str2hex(s) { var h = ""; for(var i=0;i<s.length;i++) { h += ""+s.charCodeAt(i).toString(16); } return h; }';
   cJsHexEncodeDecodeFuncs = cJSHexDecodeFunc + cJSHexEncodeFunc;
@@ -33,8 +62,6 @@ type
   TUndScriptResult = record
    success:boolean;
    errormessage:string;
-   scriptsuccess:boolean;
-   scripterrors: string;
    expressionresult:string;
   end;
 
@@ -63,6 +90,21 @@ type
    NilKeyword: string;
    StringEncodeFormat: TUndStringEncodeFormat;
   end;
+
+const
+ langdef_Lua: TUndLanguageExternal = (
+   Command: '%p\lua5.1.exe';
+   FileExt: '.lua';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: '%k = %v;';
+   FuncWriteFormat: crlf+'print("\n%pt=%t,n=%k,v="..%g.."\n");';
+   StringEncoder: 'string.tohex(%s)';
+   StringDecoder: 'string.fromhex(%s)';
+   FormatScript: cLuaHexEncodeDecodeFuncs+'%s';
+   NilKeyword: 'nil';
+   StringEncodeFormat: usfHex;
+ );
 
 const
  langdef_PHP: TUndLanguageExternal = (

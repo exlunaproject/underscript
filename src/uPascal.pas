@@ -96,8 +96,9 @@ var
     end;
   end;
 begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
+    Exit;
   r.success := true;
-  r.scriptsuccess := true;
   obj := TUndPascal.Create(L);
   importer:=TUndImporter.create(L);
   //importer.EnableDebug:=true;

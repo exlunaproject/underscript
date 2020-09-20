@@ -57,8 +57,9 @@ var
   script: string;
   importer: TUndImporter;
 begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
+    Exit;
   r.success := true;
-  r.scriptsuccess := true;
   obj := TUndPython.Create(L);
   importer := TUndImporter.Create(L);
   importer.EnableDebug:=false;

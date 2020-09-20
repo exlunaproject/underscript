@@ -65,8 +65,9 @@ var
   importer: TUndImporter;
   i: integer;
 begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
+    Exit;
   r.success := true;
-  r.scriptsuccess := true;
   obj := TUndDWS.Create(L);
   importer := TUndImporter.Create(L);
   importer.EnableDebug := false;
