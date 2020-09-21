@@ -143,7 +143,7 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '$%k';
    FuncReadFormat: '$%k = %v;';
-   FuncWriteFormat: ';print("%pt=%t,n=%k,v=".%g);';
+   FuncWriteFormat: ';print("\n%pt=%t,n=%k,v=".%g);';
    StringEncoder: 'unpack("H*",%s)';
    StringDecoder: 'pack("H*",%s)';
    FormatScript: '%s';

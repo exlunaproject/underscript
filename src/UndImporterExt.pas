@@ -310,7 +310,6 @@ begin
 
   if pos('%',fLanguage.FormatScript) <> 0 then
   script := replacestr(fLanguage.FormatScript, '%s', script);
-  //writeln(script);
 
   fn := GetTempFile(fLanguage.FileExt);
   sl := TStringList.Create;

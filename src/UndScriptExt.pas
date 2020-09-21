@@ -9,7 +9,7 @@ unit UndScriptExt;
 interface
 
 uses
-  Classes, Lua, pLua, UndConst, UndImporterExt;
+  Classes, Lua, pLua, UndConst, UndImporterExt, CatUtils;
 
 function lua_run_luajit(L: plua_State):integer; cdecl;
 function lua_run_luav51(L: plua_State):integer; cdecl;
