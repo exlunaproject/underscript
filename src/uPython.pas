@@ -29,21 +29,6 @@ type
       const Data: AnsiString);
   end;
 
-type
-  TUndPythonWrapper = class(TLuaObject)
-  private
-    obj: TUndPython;
-    constructor Create(LuaState: Plua_State;
-      AParent: TLuaObject = nil); overload;
-    function GetPropValue(propName: String): Variant; override;
-    function SetPropValue(propName: String; const AValue: Variant)
-      : Boolean; override;
-  public
-    destructor Destroy; override;
-  published
-  end;
-
-procedure RegisterUndPythonWrapper(L: Plua_State);
 function Python_Run(L: Plua_State): integer; cdecl;
 
 implementation
@@ -88,53 +73,6 @@ begin
   result := 1;
 end;
 
-function method_evalstring(L: Plua_State): integer; cdecl;
-var
-  ht: TUndPythonWrapper;
-  r: string;
-begin
-  ht := TUndPythonWrapper(LuaToTLuaObject(L, 1));
-  r := ht.obj.PyEngine.EvalStringAsStr(plua_toansistring(L, 2));
-  lua_pushstring(L, r);
-  result := 1;
-end;
-
-function method_run(L: Plua_State): integer; cdecl;
-var
-  ht: TUndPythonWrapper;
-begin
-  ht := TUndPythonWrapper(LuaToTLuaObject(L, 1));
-  // ht.obj.EvalString(lua_tostring(L,2));
-  try
-    ht.obj.PyEngine.ExecString(plua_toansistring(L, 2));
-  except
-  end;
-  result := 1;
-end;
-
-function XCL_new(L: Plua_State; AParent: TLuaObject = nil): TLuaObject;
-begin
-  result := TUndPythonWrapper.Create(L, AParent);
-end;
-
-function new_XCL(L: Plua_State): integer; cdecl;
-var
-  p: TLuaObjectNewCallback;
-begin
-  p := @XCL_new;
-  result := new_LuaObject(L, cObjectName, p);
-end;
-
-procedure methods_XCL(L: Plua_State; classTable: integer);
-begin
-  RegisterMethod(L, 'Eval', @method_evalstring, classTable);
-  RegisterMethod(L, 'Run', @method_run, classTable);
-end;
-
-procedure RegisterUndPythonWrapper(L: Plua_State);
-begin
-  RegisterTLuaObject(L, cObjectName, @new_XCL, @methods_XCL);
-end;
 
 procedure TUndPython.PythonModule1Initialization(Sender: TObject);
 begin
@@ -315,32 +253,6 @@ begin
     PyEngine.free;
   except
   end; // this causes a crash if the app is terminated in the middle of the execution
-  inherited Destroy;
-end;
-
-constructor TUndPythonWrapper.Create(LuaState: Plua_State; AParent: TLuaObject);
-begin
-  inherited Create(LuaState, AParent);
-  obj := TUndPython.Create(L);
-end;
-
-function TUndPythonWrapper.GetPropValue(propName: String): Variant;
-begin
-  { if CompareText(propName, 'ErrorMsg') = 0 then result := obj.ErrorInfo else }
-  result := inherited GetPropValue(propName);
-end;
-
-function TUndPythonWrapper.SetPropValue(propName: String;
-  const AValue: Variant): Boolean;
-begin
-  result := true;
-  // if CompareText(propName, 'Expression') = 0 then obj.Expression.text := AValue else
-  result := inherited SetPropValue(propName, AValue);
-end;
-
-destructor TUndPythonWrapper.Destroy;
-begin
-  obj.free;
   inherited Destroy;
 end;
 

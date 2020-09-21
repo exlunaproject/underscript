@@ -36,21 +36,6 @@ type
     procedure SetGlobal(Info: TProgramInfo);
   end;
 
-type
-  TUndDWSWrapper = class(TLuaObject)
-  private
-    Pas: TUndDWS;
-    constructor Create(LuaState: Plua_State;
-      AParent: TLuaObject = nil); overload;
-    function GetPropValue(propName: String): Variant; override;
-    function SetPropValue(propName: String; const AValue: Variant)
-      : Boolean; override;
-  public
-    destructor Destroy; override;
-  published
-  end;
-
-procedure RegisterUndPascalWrapper(L: Plua_State);
 function PascalScript_Run(L: Plua_State): integer; cdecl;
 function PascalWebScript_Run(L: Plua_State): integer; cdecl;
 function DWSScript_Run(L: Plua_State; isfilter: Boolean): integer; cdecl;
@@ -129,26 +114,6 @@ begin
   DWSScript_Run(L, true);
   Result := 1;
 end;
-
-{ function method_run(l : PLua_State) : Integer; cdecl;
-  var o : TUndDWSWrapper; s,data:string;
-  procedure OutputMessages;
-  var l: Longint;
-  begin
-  for l := 0 to o.pas.PSScript.CompilerMessageCount - 1 do
-  o.pas.errormsg:=o.pas.errormsg+('Compiler: '+ o.pas.PSScript.CompilerErrorToStr(l));
-  end;
-  begin
-  o:=TUndDWSWrapper(LuaToTLuaObject(l, 1));
-  s:=pchar(lua_tostring(L,2));
-  o.pas.Output:=emptystr;  o.pas.ErrorMsg:=emptystr;
-  o.pas.PSScript.Script.Text:=s;
-  if o.pas.PSScript.Compile then begin
-  o.pas.success:= o.pas.PSScript.Execute;
-  end else o.pas.Success:=false; // else writeln('Failed to compile.');
-  OutputMessages;
-  result := 1;
-  end; }
 
 procedure TUndDWS.writeln(Info: TProgramInfo);
 begin
@@ -304,58 +269,6 @@ begin
   dwsfilter1.Free;
   dwshtmlunit1.Free;
   dws2Unit1.Free;
-  inherited Destroy;
-end;
-
-constructor TUndDWSWrapper.Create(LuaState: Plua_State; AParent: TLuaObject);
-begin
-  inherited Create(LuaState, AParent);
-  Pas := TUndDWS.Create(LuaState);
-end;
-
-function TUndDWSWrapper.GetPropValue(propName: String): Variant;
-begin
-  { if CompareText(propName, 'ErrorMsg') = 0 then result := pas.ErrorMsg else
-    if CompareText(propName, 'Output') = 0 then result := pas.Output else
-    if CompareText(propName, 'Success') = 0 then result := pas.Success else }
-  Result := inherited GetPropValue(propName);
-end;
-
-function TUndDWSWrapper.SetPropValue(propName: String;
-  const AValue: Variant): Boolean;
-begin
-  Result := true;
-  // if CompareText(propName, 'Expression') = 0 then obj.Expression.text := AValue else
-  Result := inherited SetPropValue(propName, AValue);
-end;
-
-procedure RegisterUndPascalWrapper(L: Plua_State);
-const
-  cObjectName = 'RPascalScript';
-  procedure Register_Methods(L: Plua_State; classTable: integer);
-  begin
-    // RegisterMethod(L,'eval', @method_evalstring, classTable);
-    // RegisterMethod(L,'run', @method_run, classTable);
-  end;
-  function GetLuaObject(L: Plua_State; AParent: TLuaObject = nil): TLuaObject;
-  begin
-    Result := TUndDWSWrapper.Create(L, AParent);
-  end;
-  function new_Object(L: Plua_State): integer; cdecl;
-  var
-    p: TLuaObjectNewCallback;
-  begin
-    p := @GetLuaObject;
-    Result := new_LuaObject(L, cObjectName, p);
-  end;
-
-begin
-  RegisterTLuaObject(L, cObjectName, @new_Object, @Register_Methods);
-end;
-
-destructor TUndDWSWrapper.Destroy;
-begin
-  Pas.Free;
   inherited Destroy;
 end;
 
