@@ -22,6 +22,7 @@ type
     fLuaState: Plua_State;
     procedure Debug(s: string);
     procedure HandleOutput(L: Plua_State; const s: string);
+    procedure HandleOutputAlt(const s: string);
     function ImportVariables(L: Plua_State; FormatStr: string): string;
     function GetFormatedImport(const s: string;v:TUndLuaVariable): string;
     function GetLocalsImport(L: Plua_State; LocalFormatStr: string;
@@ -240,7 +241,7 @@ begin
   Debug('Init:' + InitScript);
   EndScript := ImportVariables(L, fLanguage.FuncWriteFormat);
   Debug('End:' + EndScript);
-  result := InitScript + script + EndScript;
+  result := InitScript + crlf + script + crlf + EndScript;
   Debug('Done getting script.');
 end;
 
@@ -262,15 +263,15 @@ begin
       vvalue := sl.Values['v'];
       case ltype of
         LUA_TBOOLEAN:
-          pLua_SetLocal(fLuaState,vname,StrToBool(vvalue));
+          pLua_SetLocal(L,vname,StrToBool(vvalue));
         LUA_TNUMBER:
-          pLua_SetLocal(fLuaState,vname,StrToIntDef(vvalue,0));
+          pLua_SetLocal(L,vname,StrToIntDef(vvalue,0));
         LUA_TNIL:
-          pLua_SetLocal(fLuaState,vname,varNull);
+          pLua_SetLocal(L,vname,varNull);
         LUA_TSTRING: begin
           vvalue := stringdecode(vvalue);
           //writeln('setting:'+vname+'='+vvalue);
-          pLua_SetLocal(fLuaState,vname,vvalue);
+          pLua_SetLocal(L,vname,vvalue);
         end;
       end;
     end else begin
@@ -283,6 +284,11 @@ begin
   end;
   slp.Free;
   sl.Free;
+end;
+
+procedure TUndExternal.HandleOutputAlt(const s: string);
+begin
+  HandleOutput(fLuaState, s);
 end;
 
 function TUndExternal.RunScript(L: Plua_State; script: string):integer;
@@ -312,14 +318,19 @@ begin
   sl.SaveToFile(fn);
   if fileexists(command) then begin
     cmd := TCatCSCommand.Create;
+    cmd.OnOutput := HandleOutputAlt;
+   {$IFDEF DXE2_OR_UP}
     RunCmdWithCallBack(command, fn,
       procedure(const Line: string)
       begin
-        outdebug('out:'+Line);
+        //outdebug('out:'+Line);
         HandleOutput(L, Line);
       end
     );
-  cmd.free;
+   {$ELSE}
+     cmd.Run(command, fn);
+   {$ENDIF}
+    cmd.free;
   end else begin
     r.success := false;
     r.errormessage := command+' not available in path.';
