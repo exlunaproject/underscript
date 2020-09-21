@@ -1,6 +1,6 @@
 ## Pascal Support
 
-## Example 1 - Hello World
+### Example 1 - Hello World
 
 ```lua
 require "Underscript"
@@ -15,7 +15,7 @@ end
 say(" Hello World! ")
 ```
 
-## Example 2 - Pascal Program
+### Example 2 - Pascal Program
 
 ```lua
 require "Underscript"

@@ -81,7 +81,7 @@ var
     vname := lua_getlocal(L, @ar, i);
     v.name := vname;
     v.LuaType := lua_type(L, -1);
-    v.LuaTypeStr := plua_LuaTypeToKeyword(v.LuaType);
+    v.LuaTypeStr := plua_TypeToKeyword(v.LuaType);
     if vname <> nil then
     begin
       Debug('found local var:' + v.name);
@@ -135,7 +135,7 @@ begin
     while (lua_next(L, Index) <> 0) do
     begin
       v.LuaType := lua_type(L, -1);
-      v.LuaTypeStr := plua_LuaTypeToKeyword(v.LuaType);
+      v.LuaTypeStr := plua_TypeToKeyword(v.LuaType);
       v.name := plua_dequote(plua_LuaStackToStr(L, -2, MaxTable, SubTableMax));
       //v.name := dequote(plua_LuaStackToStr(L, -2, MaxTable, SubTableMax));
       // Value := Dequote(LuaStackToStr(L, -1, MaxTable, SubTableMax));

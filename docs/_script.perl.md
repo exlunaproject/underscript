@@ -1,6 +1,6 @@
 ## Perl Support
 
-## Hello World Example (using embedded Strawberry Perl)
+### Hello World Example (using embedded Strawberry Perl)
 
 ```lua
 require "Underscript"
@@ -15,7 +15,7 @@ end
 say('Hello World')
 ```
 
-## Hello World Example (using ActivePerl)
+### Hello World Example (using ActivePerl)
 
 **Note**: The ActivePerl installer must be downloaded separately from the [official site](http://www.activestate.com/activeperl).
 

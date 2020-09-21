@@ -98,7 +98,8 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '%k';
    FuncReadFormat: '%k = %v;';
-   FuncWriteFormat: crlf+'print("\n%pt=%t,n=%k,v="..%g.."\n");';
+   // Note: do not remove the space before print
+   FuncWriteFormat: ' print("%pt=%t,n=%k,v="..%g);';
    StringEncoder: 'string.tohex(%s)';
    StringDecoder: 'string.fromhex(%s)';
    FormatScript: cLuaHexEncodeDecodeFuncs+'%s';
@@ -113,7 +114,7 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '$%k';
    FuncReadFormat: '$%k = %v;';
-   FuncWriteFormat: crlf+'echo("\n%pt=%t,n=%k,v=".%g."\n");';
+   FuncWriteFormat: ';echo("\n%pt=%t,n=%k,v=".%g);';
    StringEncoder: 'base64_encode(%s)';
    StringDecoder: 'base64_decode(%s)';
    FormatScript: '<?php %s ?>';
@@ -127,9 +128,9 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '%k';
    FuncReadFormat: '%k = %v;';
-   FuncWriteFormat: crlf+'puts "\n%pt=%t,n=%k,v="+%g+"\n";';
-   StringEncoder: 'Base64.encode64(%s)';
-   StringDecoder: 'Base64.decode64(%s)';
+   FuncWriteFormat: ';puts "%pt=%t,n=%k,v="+%g;';
+   StringEncoder: 'Base64.strict_encode64(%s)';
+   StringDecoder: 'Base64.strict_decode64(%s)';
    FormatScript: 'require "base64"; %s';
    NilKeyword: '""';
  );
@@ -142,7 +143,7 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '$%k';
    FuncReadFormat: '$%k = %v;';
-   FuncWriteFormat: crlf+'print("\n%pt=%t,n=%k,v=".%g."\n");';
+   FuncWriteFormat: ';print("%pt=%t,n=%k,v=".%g);';
    StringEncoder: 'unpack("H*",%s)';
    StringDecoder: 'pack("H*",%s)';
    FormatScript: '%s';
@@ -157,7 +158,7 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '%k';
    FuncReadFormat: '%k = %v;';
-   FuncWriteFormat: crlf+'print("\n%pt=%t,n=%k,v="+%g+"\n");';
+   FuncWriteFormat: crlf+'print("%pt=%t,n=%k,v="+%g);';
    StringEncoder: 'str(base64.b64encode(%s.encode("utf-8")),"utf-8")';
    StringDecoder: 'str(base64.b64decode(%s),"utf-8")';
    FormatScript: 'import base64; %s';
@@ -171,7 +172,7 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '%k';
    FuncReadFormat: '%k = %v;';
-   FuncWriteFormat: crlf+'console.log("\n%pt=%t,n=%k,v="+%g+"\n");';
+   FuncWriteFormat: ';console.log("%pt=%t,n=%k,v="+%g);';
    StringEncoder: '(new Buffer(%s).toString("base64"))';
    StringDecoder: '(new Buffer(%s, "base64").toString("ascii"))';
    FormatScript: '%s';
@@ -187,7 +188,7 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '%k';
    FuncReadFormat: 'let %k = %v;';
-   FuncWriteFormat: crlf+'console.log("\n%pt=%t,n=%k,v="+%g+"\n");';
+   FuncWriteFormat: ';console.log("%pt=%t,n=%k,v="+%g);';
    StringEncoder: '(new Buffer(%s).toString("base64"))';
    StringDecoder: '(new Buffer(%s, "base64").toString("ascii"))';
    FormatScript: '''use strict''; %s';
@@ -201,7 +202,7 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '%k';
    FuncReadFormat: '%k = %v;';
-   FuncWriteFormat: crlf+'print("\n%pt=%t,n=%k,v="+%g+"\n");';
+   FuncWriteFormat: ';print("\n%pt=%t,n=%k,v="+%g);';
    StringEncoder: 'str2hex(%s)';
    StringDecoder: 'hex2str(%s)';
    FormatScript: cJsHexEncodeDecodeFuncs+' %s';
@@ -216,7 +217,7 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '$%k';
    FuncReadFormat: 'set %k %v;';
-   FuncWriteFormat: crlf+'puts [join [list "%pt=%t,n=%k,v=" %g] ""];';
+   FuncWriteFormat: ';puts [join [list "%pt=%t,n=%k,v=" %g] ""];';
    StringEncoder: '[binary encode hex %s]';
    StringDecoder: '[binary decode hex %s]';
    FormatScript: '%s';

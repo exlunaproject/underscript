@@ -1,6 +1,6 @@
 ## VBScript Support
 
-## Hello World Example
+### Hello World Example
 
 ```lua
 require "Underscript"

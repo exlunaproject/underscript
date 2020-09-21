@@ -121,9 +121,9 @@ var
     debug('get loc...'+inttostr(id));
     lua_pop(L, 1);
     vname := lua_getlocal(L, @ar, i);
-    v.name := vname;
+    v.name := string(vname);
     v.LuaType := lua_type(L, -1);
-    v.LuaTypeStr := plua_luatypetokeyword(v.LuaType);
+    v.LuaTypeStr := plua_typetokeyword(v.LuaType);
     // VarValue:=plua_tovariant(L, -1);
     if vname <> nil then
     begin
@@ -179,7 +179,7 @@ begin
     while (lua_next(L, Index) <> 0) do
     begin
       v.LuaType := lua_type(L, -1);
-      v.LuaTypeStr := plua_luatypetokeyword(v.LuaType);
+      v.LuaTypeStr := plua_typetokeyword(v.LuaType);
       v.name := plua_dequote(plua_LuaStackToStr(L, -2, MaxTable, SubTableMax));
       // Value := Dequote(LuaStackToStr(L, -1, MaxTable, SubTableMax));
       if sl.IndexOf(v.name) = -1 then
@@ -257,7 +257,7 @@ begin
   while slp.Found do begin
     if beginswith(slp.Current, cUnderSetPrefix) then begin
       sl.CommaText := after(slp.Current, cUnderSetPrefix);
-      ltype := plua_keywordtoluatype(sl.Values['t']);
+      ltype := plua_keywordtotype(sl.Values['t']);
       vname := sl.Values['n'];
       vvalue := sl.Values['v'];
       case ltype of
@@ -276,6 +276,7 @@ begin
     end else begin
 
       if rudCustomFunc_WriteLn <> emptystr then begin
+        //outdebug('writeln:'+slp.Current);
         Und_CustomWriteLn(L,slp.Current,rudCustomFunc_WriteLn);
       end;
     end;
@@ -312,9 +313,10 @@ begin
   if fileexists(command) then begin
     cmd := TCatCSCommand.Create;
     RunCmdWithCallBack(command, fn,
-      procedure(const Line: PAnsiChar)
+      procedure(const Line: string)
       begin
-        HandleOutput(L, String(Line));
+        outdebug('out:'+Line);
+        HandleOutput(L, Line);
       end
     );
   cmd.free;
