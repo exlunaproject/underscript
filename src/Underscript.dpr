@@ -150,6 +150,7 @@ begin
   lang_perl: lua_pushcfunction(L, lua_run_perl);
   lang_php: lua_pushcfunction(L, lua_run_php);
   lang_ruby: lua_pushcfunction(L,lua_run_ruby);
+  lang_tiscript: lua_pushcfunction(L,lua_run_tiscript);
   lang_tcl: lua_pushcfunction(L,lua_run_tcl);
  else
   result:=0;

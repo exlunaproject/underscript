@@ -9,6 +9,8 @@ unit UndImporterExt;
 
 interface
 
+{$I Catarinka.inc}
+
 uses
   Classes, Lua, pLua, Variants, SysUtils, CatStrings, CatCSCommand, CatFiles,
   CatStringLoop, CatUtils, UndConst;
@@ -297,8 +299,13 @@ var
   cmd: TCatCSCommand;
   fn, progdir, underpath, command: string;
   sl: TStringList;
+  timeout: integer;
 begin
   result := 1;
+  timeout := 0;
+  if uoTimeout in fLanguage.Options then
+    timeout := 10000;
+
   r.success := true;
   //path := 'R:\Win64\Extensions\underscript\';
   progdir := extractfilepath(paramstr(0));
@@ -318,14 +325,15 @@ begin
   if fileexists(command) then begin
     cmd := TCatCSCommand.Create;
     cmd.OnOutput := HandleOutputAlt;
-   {$IFDEF DXE2_OR_UP}
+    cmd.Timeout := timeout;
+    {$IFDEF DXE2_OR_UP}
     RunCmdWithCallBack(command, fn,
       procedure(const Line: string)
       begin
         //outdebug('out:'+Line);
         HandleOutput(L, Line);
       end
-    );
+    , timeout);
    {$ELSE}
      cmd.Run(command, fn);
    {$ENDIF}

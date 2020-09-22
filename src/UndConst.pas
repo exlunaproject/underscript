@@ -34,6 +34,7 @@ type
   lang_php,
   lang_ruby,
   lang_tcl,
+  lang_tiscript,
   lang_vbscript
  );
 
@@ -75,6 +76,8 @@ type
 
 type
   TUndStringEncodeFormat = (usfBase64, usfHex);
+  TUndOptions = (uoTimeout);
+  TUndOptionSet = set of TUndOptions;
 
 type
   TUndLanguageExternal = record
@@ -89,6 +92,7 @@ type
    FormatScript: string;
    NilKeyword: string;
    StringEncodeFormat: TUndStringEncodeFormat;
+   Options: TUndOptionSet;
   end;
 
 const
@@ -208,6 +212,21 @@ const
    FormatScript: cJsHexEncodeDecodeFuncs+' %s';
    NilKeyword: 'null';
    StringEncodeFormat: usfHex;
+ );
+
+const
+ langdef_TIScript: TUndLanguageExternal = (
+   Command: '%u\tiscript\tiscript.exe';
+   FileExt: '.tis';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: 'var %k = %v;';
+   FuncWriteFormat: ';stdout.println("\n%pt=%t,n=%k,v="+%g);';
+   StringEncoder: 'Bytes.fromString(%s,"utf-8").toString("base64")';
+   StringDecoder: 'Bytes.fromString(%s, "base64").toString("utf-8")';
+   FormatScript: '%s';
+   NilKeyword: 'null';
+   Options: [uoTimeout];
  );
 
 const

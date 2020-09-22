@@ -23,6 +23,7 @@ function lua_run_php(L: plua_State):integer; cdecl;
 function lua_run_ruby(L: plua_State):integer; cdecl;
 function lua_run_perl(L: plua_State):integer; cdecl;
 function lua_run_python(L: plua_State):integer; cdecl;
+function lua_run_tiscript(L: plua_State):integer; cdecl;
 function lua_run_tcl(L: plua_State):integer; cdecl;
 
 implementation
@@ -112,6 +113,12 @@ function lua_run_python(L: plua_State):integer; cdecl;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK then
     RunExternalScript(L, lua_tostring(L,1), langdef_Python);
+end;
+
+function lua_run_tiscript(L: plua_State):integer; cdecl;
+begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), langdef_TIScript);
 end;
 
 function lua_run_tcl(L: plua_State):integer; cdecl;
