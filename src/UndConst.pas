@@ -244,8 +244,8 @@ const
    StringEncodeFormat: usfHex;
  );
 
-procedure Und_CustomWrite(L: plua_State; s: String; customfunc: String = '');
-procedure Und_CustomWriteLn(L: plua_State; s: String; customfunc: String = '');
+procedure Und_CustomWrite(L: plua_State; s: String);
+procedure Und_CustomWriteLn(L: plua_State; s: String);
 procedure Und_LogError(L: plua_State; line: integer; msg: String);
 procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult);
 procedure RedirectIO(const b:boolean);
@@ -265,7 +265,8 @@ end;
 
 procedure Und_LogError(L: plua_State; line: integer; msg: String);
 begin
-  if rudCustomFunc_LogError = emptystr then
+  //outdebug('call:'+customfunc);
+  if rudCustomFunc_LogError= emptystr then
     exit;
   if plua_functionexists(L, rudCustomFunc_LogError) = true then begin
     lua_getglobal(L, PAnsiChar(AnsiString(rudCustomFunc_LogError)));
@@ -275,12 +276,12 @@ begin
   end;
 end;
 
-procedure Und_CustomWrite(L: plua_State; s: String; customfunc: String = '');
+procedure Und_CustomWrite(L: plua_State; s: String);
 begin
-  if customfunc <> emptystr then
+  if rudCustomFunc_Write <> emptystr then
   begin
-    if plua_functionexists(L, customfunc) = true then begin
-      lua_getglobal(L, PAnsiChar(AnsiString(customfunc)));
+    if plua_functionexists(L, rudCustomFunc_Write) = true then begin
+      lua_getglobal(L, PAnsiChar(AnsiString(rudCustomFunc_Write)));
       lua_pushstring(L, s);
       lua_pcall(L, 1, 0, 0);
     end;
@@ -289,14 +290,14 @@ begin
     system.Write(s);
 end;
 
-procedure Und_CustomWriteLn(L: plua_State; s: String; customfunc: String = '');
+procedure Und_CustomWriteLn(L: plua_State; s: String);
 begin
-  if customfunc <> emptystr then
+  if rudCustomFunc_WriteLn <> emptystr then
   begin
-    OutDebug('checking existance of:'+customfunc);
-    if plua_functionexists(L, customfunc) = true then begin
-      OutDebug('writeln to func:'+s);
-      lua_getglobal(L, PAnsiChar(AnsiString(customfunc)));
+    //OutDebug('checking existance of:'+rudCustomFunc_WriteLn);
+    if plua_functionexists(L, rudCustomFunc_WriteLn) = true then begin
+      //OutDebug('writeln to func:'+s);
+      lua_getglobal(L, PAnsiChar(AnsiString(rudCustomFunc_WriteLn)));
       lua_pushstring(L, s);
       lua_pcall(L, 1, 0, 0);
     end;

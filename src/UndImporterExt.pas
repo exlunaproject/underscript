@@ -278,10 +278,9 @@ begin
       end;
     end else begin
 
-      if rudCustomFunc_WriteLn <> emptystr then begin
+       // if rudCustomFunc_WriteLn <> emptystr then begin
         //outdebug('writeln:'+slp.Current);
-        Und_CustomWriteLn(L,slp.Current,rudCustomFunc_WriteLn);
-      end;
+        Und_CustomWriteLn(L,slp.Current);
     end;
   end;
   slp.Free;

@@ -82,12 +82,12 @@ end;
 
 procedure TUndHelper.Write(s: String);
 begin
-  Und_CustomWrite(LuaState, s, rudCustomFunc_Write);
+  Und_CustomWrite(LuaState, s);
 end;
 
 procedure TUndHelper.writeln(s: String);
 begin
-  Und_CustomWriteLn(LuaState, s, rudCustomFunc_WriteLn);
+  Und_CustomWriteLn(LuaState, s);
 end;
 
 initialization

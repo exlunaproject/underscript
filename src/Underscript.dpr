@@ -82,7 +82,7 @@ uses
   MethodCallBack in 'thirdparty\python\MethodCallBack.pas',
   VarPyth in 'thirdparty\python\VarPyth.pas',
   {$ENDIF}  
-  CatTasks;
+  CatStrings;
 
 // Reduces exe size
 {$IFDEF RELEASE}
@@ -158,6 +158,40 @@ begin
 end;
 
 type
+  TScriptExts = (
+    extdpr, extdws, extjs, extlua, extpas, extphp, extpl, extpy, extrb, exttis, extvbs,
+    exttcl);
+function lua_getscriptfuncbyfileext(L: plua_State):integer; cdecl;
+var ext:string;
+begin
+ result:=1;
+ ext:=lua_tostring(L,2);
+ if beginswith(ext, '.') then
+   ext := after(ext, '.');
+ case TScriptExts(GetEnumValue(TypeInfo(TScriptExts), 'ext'+lowercase(ext))) of
+  extlua: lua_pushcfunction(L,lua_run_luav51);
+  {$IFDEF UNDER_ACTIVESCRIPT}
+  extjs: lua_pushcfunction(L,JavaScript_Run);
+  extvbs: lua_pushcfunction(L,VBScript_Run);
+  {$ENDIF}
+  {$IFDEF UNDER_PASCAL}
+  extdws: lua_pushcfunction(L,PascalWebScript_Run);
+  {$ENDIF}
+  {$IFDEF UNDER_PASCAL_CLASSIC}
+  extdpr, extpas: lua_pushcfunction(L,PascalClassic_Run);
+  {$ENDIF}
+  extpy: lua_pushcfunction(L, lua_run_python);
+  extpl: lua_pushcfunction(L, lua_run_perl);
+  extphp: lua_pushcfunction(L, lua_run_php);
+  extrb: lua_pushcfunction(L,lua_run_ruby);
+  exttis: lua_pushcfunction(L,lua_run_tiscript);
+  exttcl: lua_pushcfunction(L,lua_run_tcl);
+ else
+  result:=0;
+ end;
+end;
+
+type
  TOptionType = (
   opt_modulename,
   opt_usevars,
@@ -203,6 +237,7 @@ function luaopen_Underscript_Runner(L: plua_State):integer; cdecl;
 begin
  lua_newtable(L);
  plua_SetFieldValue(L,'run',@lua_getscriptfunc,nil);
+ plua_SetFieldValue(L,'runext',@lua_getscriptfuncbyfileext,nil);
  plua_SetFieldValue(L,'options',@lua_getoption,@lua_setoption);
  Result := 1;
 end;

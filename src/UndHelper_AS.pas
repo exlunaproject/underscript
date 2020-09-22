@@ -130,13 +130,13 @@ end;
 
 procedure TUndHelper.Write(s: String);
 begin
-  Und_CustomWrite(LuaState, s, rudCustomFunc_Write);
+  Und_CustomWrite(LuaState, s);
 end;
 
 procedure TUndHelper.WriteLn(s: String);
 begin
   //OutDebug('printwriteln:'+s+';expecting: '+rudCustomFunc_WriteLn);
-  Und_CustomWriteLn(LuaState, s, rudCustomFunc_WriteLn);
+  Und_CustomWriteLn(LuaState, s);
 end;
 
 initialization
