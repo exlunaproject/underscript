@@ -67,12 +67,11 @@ type
 procedure TScriptErrorHandler.ScriptError(Line, Pos: integer;
   ASrc, ADescription: String);
 begin
-  Und_LogError(UndHelper.LuaState, Line, scriptlanguage + ': ' + ADescription +
+  uConsoleErrorLn(UndHelper.LuaState, Line, scriptlanguage + ': ' + ADescription +
     ' [' + ASrc + ']');
   // errors.add(inttostr(line)+': '+Adescription+' ['+Asrc+']');
-  if rudCustomFunc_LogError = emptystr then
-    UndHelper.writeln(scriptlanguage + ': ' + inttostr(Line) + ': ' +
-      ADescription + ' [' + ASrc + ']');
+  //  UndHelper.writeln(scriptlanguage + ': ' + inttostr(Line) + ': ' +
+  //    ADescription + ' [' + ASrc + ']');
 end;
 
 // Runs script and returns the result and error info (if any)
@@ -81,7 +80,7 @@ function Script_Run(L: plua_State; Script, Lang: string;
 var
   r: TUndScriptResult;
   obj: TScarlettActiveScript;
-  W: TUndHelper;
+  uconsole: TUndHelper;
   Importer: TUndImporter;
   eh: TScriptErrorHandler;
 begin
@@ -91,8 +90,8 @@ begin
   Importer := TUndImporter.create(L);
   Importer.EnableDebug := false;
   PrepareLanguage(Importer, Lang);
-  W := TUndHelper.create;
-  W.LuaState := L; // IMPORTANT!
+  uconsole := TUndHelper.create;
+  uconsole.LuaState := L; // IMPORTANT!
   UndHelper.LuaState := L; // IMPORTANT!
   obj := TScarlettActiveScript.create(UndHelper);
   obj.asw.scriptlanguage := cDefaultLanguage; // javascript
@@ -101,7 +100,7 @@ begin
     obj.asw.scriptlanguage := Lang;
   eh.scriptlanguage := obj.asw.scriptlanguage;
   obj.asw.UseSafeSubset := false;
-  obj.asw.AddNamedItem(rudLibName, W);
+  obj.asw.AddNamedItem(rudLibName, uconsole);
   Script := lua_tostring(L, 1);
   Script := Importer.GetScript(L, Script);
   Importer.Free;
@@ -182,7 +181,6 @@ begin
     Script_Run(L, lua_tostring(L, 1), 'LuaScript', true);
 end;
 
-// ActiveScript Functions // eg:  Und.ActiveScript.Run('LuaScript','(someluascript...)')
 function ActiveScript_Run(L: plua_State): integer; cdecl;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING, LUA_TSTRING]).OK then

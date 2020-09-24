@@ -16,6 +16,7 @@ type
   public
     LuaState: PLua_State;
     constructor Create;
+    procedure Debug(s: String);
     procedure Write(s: String);
     procedure WriteLn(s: String);
     procedure Run(Script: String);
@@ -80,14 +81,19 @@ begin
   result := v;
 end;
 
+procedure TUndHelper.Debug(s: String);
+begin
+  uConsoleDebug(LuaState, s);
+end;
+
 procedure TUndHelper.Write(s: String);
 begin
-  Und_CustomWrite(LuaState, s);
+  uConsoleWrite(LuaState, s);
 end;
 
 procedure TUndHelper.writeln(s: String);
 begin
-  Und_CustomWriteLn(LuaState, s);
+  uConsoleWriteLn(LuaState, s);
 end;
 
 initialization

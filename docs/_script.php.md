@@ -62,7 +62,7 @@ echo("Hello World!")
 ```
 
 ### Custom PHP Functions
-* **underscript_write**(v)
+* **uconsole_write**(v)
 Writes a variable to the console without creating a new line
-* **underscript_writeln**(v)
+* **uconsole_writeln**(v)
 Writes a new line to the console

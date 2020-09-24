@@ -280,7 +280,7 @@ begin
 
        // if rudCustomFunc_WriteLn <> emptystr then begin
         //outdebug('writeln:'+slp.Current);
-        Und_CustomWriteLn(L,slp.Current);
+        uConsoleWriteLn(L,slp.Current);
     end;
   end;
   slp.Free;
@@ -340,7 +340,7 @@ begin
   end else begin
     r.success := false;
     r.errormessage := command+' not available in path.';
-    Und_LogError(L, -1, r.errormessage);
+    uConsoleErrorLn(L, -1, r.errormessage);
   end;
   sl.free;
   deletefile(fn);

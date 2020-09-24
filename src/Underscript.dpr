@@ -108,17 +108,18 @@ begin
     r.success := false;
     r.errormessage := lua_tostring(L, -1);
     lua_pop(L, 1);
+    uConsoleErrorLn(L, 0, r.errormessage);
    end;
    Und_PushScriptResult(L, r);
   end;
 end;
 
 function lua_getscriptfunc(L: plua_State):integer; cdecl;
-var s:string;
+var lng:string;
 begin
  result:=1;
- s:=lua_tostring(L,2);
- case TScriptType(GetEnumValue(TypeInfo(TScriptType), 'lang_'+lowercase(s))) of
+ lng:=lua_tostring(L,2);
+ case TScriptType(GetEnumValue(TypeInfo(TScriptType), 'lang_'+lowercase(lng))) of
   lang_lua: lua_pushcfunction(L,lua_run_luav51);
   lang_luain: lua_pushcfunction(L,lua_run_luacode);
   lang_luajit: lua_pushcfunction(L,lua_run_luajit);
@@ -209,10 +210,7 @@ begin
   opt_usevars: lua_pushboolean(L,RudImportVariables);
   opt_uselocals: lua_pushboolean(L,RudImportLocals);
   opt_useglobals: lua_pushboolean(L,RudImportGlobals);
-  opt_redirectio: begin
-   if rudCustomFunc_WriteLn<>emptystr then
-   lua_pushboolean(L,true) else lua_pushboolean(L,false);
-  end;
+  opt_redirectio: lua_pushboolean(L,RudRedirectIO);
  else
   result:=0;
  end;
@@ -227,7 +225,7 @@ begin
   opt_usevars: RudImportVariables := lua_toboolean(L,3);
   opt_uselocals: RudImportLocals := lua_toboolean(L,3);
   opt_useglobals: RudImportGlobals := lua_toboolean(L,3);
-  opt_redirectio: RedirectIO(lua_toboolean(L,3));
+  opt_redirectio: RudRedirectIO := lua_toboolean(L,3);
  else
   result:=0;
  end;

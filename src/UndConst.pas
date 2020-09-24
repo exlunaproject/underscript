@@ -40,7 +40,8 @@ type
 
 const
   // Important: this constant must be have the first letter uppercase because of Ruby compatibility
-  cUnd = 'Underscript';
+  cUnd = 'UConsole';
+  cUndConsoleLibName = 'uconsole';
   cUnderSetPrefix='_underscript_set:';
   cLuaHexDecodeFunc = 'function string.fromhex(s) return (s:gsub("..", function (cc) return string.char(tonumber(cc, 16)) end)) end;';
   cLuaHexEncodeFunc = 'function string.tohex(s) return (s:gsub(".", function (c) return string.format("%02X", string.byte(c)) end)) end;';
@@ -55,9 +56,7 @@ var
   rudImportVariables: boolean = true;
   rudImportGlobals: boolean = false;
   rudImportLocals: boolean = true;
-  rudCustomFunc_WriteLn: string = '';
-  rudCustomFunc_Write: string = '';
-  rudCustomFunc_LogError: string = '';
+  rudRedirectIO: boolean = false;
 
 type
   TUndScriptResult = record
@@ -244,12 +243,11 @@ const
    StringEncodeFormat: usfHex;
  );
 
-procedure Und_CustomWrite(L: plua_State; s: String);
-procedure Und_CustomWriteLn(L: plua_State; s: String);
-procedure Und_LogError(L: plua_State; line: integer; msg: String);
+procedure uConsoleDebug(L: plua_State; s: String);
+procedure uConsoleErrorLn(L: plua_State; line: integer; msg: String);
+procedure uConsoleWrite(L: plua_State; s: String);
+procedure uConsoleWriteLn(L: plua_State; s: String);
 procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult);
-procedure RedirectIO(const b:boolean);
-procedure SetCustomLibName;
 procedure SetCustomModuleName(name:string);
 
 
@@ -263,72 +261,53 @@ begin
  plua_SetFieldValue(L, 'expresult', res.expressionresult);
 end;
 
-procedure Und_LogError(L: plua_State; line: integer; msg: String);
+procedure uConsoleDebug(L: plua_State; s: String);
+const cFuncName = 'debug';
 begin
-  //outdebug('call:'+customfunc);
-  if rudCustomFunc_LogError= emptystr then
-    exit;
-  if plua_functionexists(L, rudCustomFunc_LogError) = true then begin
-    lua_getglobal(L, PAnsiChar(AnsiString(rudCustomFunc_LogError)));
-    plua_pushintnumber(L, line);
-    lua_pushstring(L, msg);
-    lua_pcall(L, 2, 0, 0)
+  if rudRedirectIO = true then begin
+    if plua_tablefunctionexists(L, cUndConsoleLibName, cFuncName) then
+      plua_tablecallfunction(L, cUndConsoleLibName, cFuncName, [s]);
+  end else begin
+    OutDebug(s);
   end;
 end;
 
-procedure Und_CustomWrite(L: plua_State; s: String);
+procedure uConsoleErrorLn(L: plua_State; line: integer; msg: String);
+const cFuncName = 'errorln';
 begin
-  if rudCustomFunc_Write <> emptystr then
-  begin
-    if plua_functionexists(L, rudCustomFunc_Write) = true then begin
-      lua_getglobal(L, PAnsiChar(AnsiString(rudCustomFunc_Write)));
-      lua_pushstring(L, s);
-      lua_pcall(L, 1, 0, 0);
-    end;
-  end
-  else
+  if rudRedirectIO = true then begin
+    if plua_tablefunctionexists(L, cUndConsoleLibName, cFuncName) then
+      plua_tablecallfunction(L, cUndConsoleLibName, cFuncName, [line, msg]);
+  end else begin
+    system.WriteLn('--('+inttostr(line)+'): '+msg);
+  end;
+end;
+
+procedure uConsoleWrite(L: plua_State; s: String);
+const cFuncName = 'write';
+begin
+  if rudRedirectIO = true then begin
+    if plua_tablefunctionexists(L, cUndConsoleLibName, cFuncName) then
+      plua_tablecallfunction(L, cUndConsoleLibName, cFuncName, [s]);
+  end else begin
     system.Write(s);
+  end;
 end;
 
-procedure Und_CustomWriteLn(L: plua_State; s: String);
+procedure uConsoleWriteLn(L: plua_State; s: String);
+const cFuncName = 'writeln';
 begin
-  if rudCustomFunc_WriteLn <> emptystr then
-  begin
-    //OutDebug('checking existance of:'+rudCustomFunc_WriteLn);
-    if plua_functionexists(L, rudCustomFunc_WriteLn) = true then begin
-      //OutDebug('writeln to func:'+s);
-      lua_getglobal(L, PAnsiChar(AnsiString(rudCustomFunc_WriteLn)));
-      lua_pushstring(L, s);
-      lua_pcall(L, 1, 0, 0);
-    end;
-  end
-  else
+  if rudRedirectIO = true then begin
+    if plua_tablefunctionexists(L, cUndConsoleLibName, cFuncName) then
+      plua_tablecallfunction(L, cUndConsoleLibName, cFuncName, [s]);
+  end else begin
     system.WriteLn(s);
-end;
-
-procedure RedirectIO(const b:boolean);
-begin
- if b = true then
-  SetCustomLibName
- else begin
-  rudCustomFunc_WriteLn:=emptystr;
-  rudCustomFunc_Write:=emptystr;
-  rudCustomFunc_LogError:=emptystr;
- end;
-end;
-
-procedure SetCustomLibName;
-begin
- rudCustomFunc_WriteLn :=lowercase(rudLibName) +'_writeln';
- rudCustomFunc_Write   :=lowercase(rudLibName)   +'_write';
- rudCustomFunc_LogError:=lowercase(rudLibName)+'_logerror';
+  end;
 end;
 
 procedure SetCustomModuleName(name:string);
 begin
- rudLibName := name;
- if rudCustomFunc_WriteLn<>emptystr then
-   SetCustomLibName;
+ rudLibName := TitleCase(name);
 end;
 
 // ------------------------------------------------------------------------//

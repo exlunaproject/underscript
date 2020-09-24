@@ -56,11 +56,11 @@ end;
 (*----------------------------------------------------------------------------*)
 procedure SIRegister_TUndHelper(CL: TPSPascalCompiler);
 begin
-  //with RegClassS(CL,'TOBJECT', 'TUndHelper') do
   with CL.AddClassN(CL.FindClass('TOBJECT'),'TUndHelper') do
   begin
     RegisterProperty('LuaState', 'PLua_State', iptrw);
     RegisterMethod('Constructor Create');
+    RegisterMethod('Procedure Debug( s : String)');
     RegisterMethod('Procedure Write( s : String)');
     RegisterMethod('Procedure WriteLn( s : String)');
     RegisterMethod('Procedure Run( s : String)');
@@ -93,6 +93,7 @@ begin
   begin
     RegisterPropertyHelper(@TUndHelperLuaState_R,@TUndHelperLuaState_W,'LuaState');
     RegisterConstructor(@TUndHelper.Create, 'Create');
+    RegisterMethod(@TUndHelper.Debug, 'Debug');
     RegisterMethod(@TUndHelper.Write, 'Write');
     RegisterMethod(@TUndHelper.WriteLn, 'WriteLn');
     RegisterMethod(@TUndHelper.Run, 'Run');

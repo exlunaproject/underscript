@@ -38,7 +38,7 @@ require "Underscript"
 -- Prints "Hello World!" in uppercase
 function say(s) _script.jscript
  [[
- Underscript.WriteLn(s.toUpperCase()+'!');
+ UConsole.WriteLn(s.toUpperCase()+'!');
  ]]
 end
 

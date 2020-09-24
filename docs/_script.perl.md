@@ -25,7 +25,7 @@ require "Underscript"
 -- Prints "Hello World!"
 function say(s) _script.perlactive
  [[
- $Underscript->WriteLn($s.'!');
+ $UConsole->WriteLn($s.'!');
  ]]
 end
 

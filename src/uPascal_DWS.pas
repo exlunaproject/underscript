@@ -28,6 +28,7 @@ type
     FPrg: TProgram;
     constructor Create(L: Plua_State);
     destructor Destroy; override;
+    procedure Debug(Info: TProgramInfo);
     procedure Write(Info: TProgramInfo);
     procedure WriteLn(Info: TProgramInfo);
     procedure GetLocal(Info: TProgramInfo);
@@ -81,10 +82,7 @@ begin
   begin
     r.success := false;
     r.errormessage := obj.FPrg.Msgs.ToString;
-    if rudCustomFunc_LogError <> emptystr then
-      Und_LogError(L, -1, obj.FPrg.Msgs[i].AsInfo)
-    else
-      UndHelper.writeln(obj.FPrg.Msgs[i].AsInfo);
+    uConsoleErrorLn(L, -1, obj.FPrg.Msgs[i].AsInfo)
   end;
   obj.FPrg.Debugger := nil;
   obj.FPrg.execute;
@@ -113,6 +111,11 @@ function PascalWebScript_Run(L: Plua_State): integer; cdecl;
 begin
   DWSScript_Run(L, true);
   Result := 1;
+end;
+
+procedure TUndDWS.Debug(Info: TProgramInfo);
+begin
+  UndHelper.debug(Info['s']);
 end;
 
 procedure TUndDWS.writeln(Info: TProgramInfo);
@@ -163,18 +166,24 @@ end;
 constructor TUndDWS.Create(L: Plua_State);
   procedure Add_CustomFunctions;
   var
+    func_debug: Tdws2Function;
     func_writeln: Tdws2Function;
-  var
     func_write: Tdws2Function;
-  var
     func_getl: Tdws2Function;
-  var
     func_getg: Tdws2Function;
-  var
     func_setl: Tdws2Function;
-  var
     func_setg: Tdws2Function;
   begin
+    // Debug
+    func_debug := Tdws2Function.Create(dws2Unit1.Functions);
+    func_debug.Name := 'Debug';
+    func_debug.ResultType := emptystr;
+    func_debug.OnEval := Debug;
+    with tdws2parameter(func_debug.Parameters.Add) do
+    begin
+      name := 's';
+      datatype := 'string';
+    end;
     // Write
     func_write := Tdws2Function.Create(dws2Unit1.Functions);
     func_write.Name := 'Write';

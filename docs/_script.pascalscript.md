@@ -8,7 +8,7 @@ require "Underscript"
 -- Prints "Hello World!" in uppercase
 function say(s) _script.pascalscript
  [[
-  Underscript.WriteLn(Uppercase(Trim(s)));
+  UConsole.WriteLn(Uppercase(Trim(s)));
  ]]
 end
 
@@ -46,7 +46,7 @@ begin
 end;
 
 begin
- Underscript.WriteLn(IntToStr(CRC16('astring')));
+ UConsole.WriteLn(IntToStr(CRC16('astring')));
 end.
 ]]
 end

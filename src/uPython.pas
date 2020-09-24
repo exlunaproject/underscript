@@ -51,7 +51,7 @@ begin
   importer.FuncReadFormat := '%k = ' + rudLibName + '.GetL("%k")' + crlf;
   importer.FuncWriteFormat := crlf + rudLibName + '.SetL("%k",%k)';
   script := lua_tostring(L, 1);
-  script := importer.GetScript(L, script); // processa
+  script := importer.GetScript(L, script);
   script := 'import ' + rudLibName + crlf + script;
   try
     obj.PyEngine.ExecString(script);
@@ -59,7 +59,7 @@ begin
     on E: Exception do begin
       r.success := false;
       r.errormessage := E.Message;
-      Und_LogError(L, -1, 'Python: ' + E.Message);
+      uConsoleErrorLn(L, -1, 'Python: ' + E.Message);
     end;
   end;
   { obj.PSScript.Script.Text:=script;
@@ -90,6 +90,19 @@ begin
 end;
 
 procedure TUndPython.CreateUndModule;
+  function Und_Debug(self, args: PPyObject): PPyObject; cdecl;
+  var
+    i: integer;
+    v: Variant;
+  begin
+    with GetPythonEngine do
+    begin
+      if args.ob_refcnt = 1 then
+        v := v + PyObjectAsVariant(PyTuple_GetItem(args, 0));
+      Undhelper.debug(v);
+      result := ReturnNone;
+    end;
+  end;
   function Und_WriteLn(self, args: PPyObject): PPyObject; cdecl;
   var
     i: integer;
@@ -213,6 +226,7 @@ procedure TUndPython.CreateUndModule;
 begin
   UndModule := TPythonModule.Create(nil);
   UndModule.ModuleName := rudLibName;
+  UndModule.AddMethod('Debug', @Und_WriteLn, 'Debug');
   UndModule.AddMethod('WriteLn', @Und_WriteLn, 'WriteLn');
   UndModule.AddMethod('Write', @Und_Write, 'Write');
   UndModule.AddMethod('GetL', @Und_GetL, 'GetL');
@@ -252,7 +266,8 @@ begin
   try
     PyEngine.free;
   except
-  end; // this causes a crash if the app is terminated in the middle of the execution
+    // avoid crash if the app is terminated in the middle of the execution
+  end;
   inherited Destroy;
 end;
 

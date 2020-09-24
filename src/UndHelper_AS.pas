@@ -2,7 +2,7 @@ unit UndHelper_AS;
 
 {
   UnderScript Helper for ActiveScript Component
-  Copyright (c) 2013-2014 Felipe Daragon
+  Copyright (c) 2013-2020 Felipe Daragon
   License: MIT (http://opensource.org/licenses/mit-license.php)
 }
 
@@ -18,11 +18,8 @@ type
   public
     LuaState: PLua_State;
     constructor Create;
+    procedure Debug(s: string);
     procedure Run(Script: String);
-    procedure FindFunc(FuncName: String); // experimental
-    procedure FindModFunc(TableName: String; FuncName: String); // experimental
-    procedure Push(v: Variant); // experimental
-    procedure CallFunc(args: integer); // experimental
     function GetG(valName: String): Variant;
     procedure SetG(valName: String; const AValue: Variant);
     function GetL(valName: String): Variant;
@@ -43,43 +40,14 @@ begin
   inherited Create(Self, false);
 end;
 
-procedure TUndHelper.FindModFunc(TableName: String; FuncName: String);
-// experimental
-var
-  tblidx, offset: integer;
+procedure TUndHelper.Debug(s: string);
 begin
-  lua_pushstring(LuaState, TableName);
-  lua_rawget(LuaState, LUA_GLOBALSINDEX);
-  if lua_istable(LuaState, -1) then
-  begin
-    // writeln(TableName+' table found');
-    tblidx := lua_gettop(LuaState);
-    // start func execution
-    lua_pushstring(LuaState, FuncName);
-    lua_rawget(LuaState, -2);
-  end;
-end;
-
-procedure TUndHelper.FindFunc(FuncName: String); // experimental
-begin
-  lua_getglobal(LuaState, PAnsiChar(AnsiString(FuncName)));
-end;
-
-procedure TUndHelper.Push(v: Variant); // experimental
-begin
-  plua_pushvariant(LuaState, v);
-end;
-
-procedure TUndHelper.CallFunc(args: integer); // experimental
-begin
-  lua_pcall(LuaState, args, 0, 0);
+  uConsoleDebug(LuaState, s);
 end;
 
 procedure TUndHelper.Run(Script: String);
 begin
-  // calls lua 5.1 pcall
-  luaL_loadbuffer(LuaState, PAnsiChar(AnsiString(Script)), Length(Script), nil);
-  lua_pcall(LuaState, 0, 0, 0);
+  plua_dostring(LuaState, Script);
 end;
 
 function TUndHelper.GetL(valName: String): Variant;
@@ -130,13 +98,13 @@ end;
 
 procedure TUndHelper.Write(s: String);
 begin
-  Und_CustomWrite(LuaState, s);
+  uConsoleWrite(LuaState, s);
 end;
 
 procedure TUndHelper.WriteLn(s: String);
 begin
   //OutDebug('printwriteln:'+s+';expecting: '+rudCustomFunc_WriteLn);
-  Und_CustomWriteLn(LuaState, s);
+  uConsoleWriteLn(LuaState, s);
 end;
 
 initialization

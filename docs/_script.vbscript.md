@@ -8,7 +8,7 @@ require "Underscript"
 -- Prints "Hello World!"
 function say(s) _script.vbscript
  [[
- Underscript.WriteLn(s & "!")
+ UConsole.WriteLn(s & "!")
  ]]
 end
 

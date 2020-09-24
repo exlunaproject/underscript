@@ -26,7 +26,6 @@ type
     Output:string;
     ErrorMsg:string;
     Success:boolean;
-    RedirectIO:boolean;
     constructor Create(L : PLua_State);
     destructor Destroy; override;
     procedure CompImport(Sender: TObject; x: TIFPSPascalcompiler);
@@ -35,6 +34,7 @@ type
     procedure Execute(Sender: TPSScript);
     procedure MyWriteln(s: string);
     procedure MyWrite(s: string);
+    procedure MyDebug(s: string);
    end;
 
 function PascalClassic_Run(L: plua_State):integer; cdecl;
@@ -69,7 +69,7 @@ var
     r.success := false;
     r.errormessage := emptystr;
     for i := 0 to obj.PSScript.CompilerMessageCount - 1 do begin
-      Und_LogError(L,i,'Pascal: '+ obj.PSScript.CompilerErrorToStr(i));
+      uConsoleErrorLn(L,i,'Pascal: '+ obj.PSScript.CompilerErrorToStr(i));
       r.errormessage := r.errormessage+crlf+obj.PSScript.CompilerErrorToStr(i);
     end;
   end;
@@ -83,12 +83,15 @@ begin
   importer.FuncReadFormat:='%k = '+rudLibName+'.GetL("%k");'+crlf;
   importer.FuncWriteFormat:=crlf+rudLibName+'.SetL("%k",%k);';
   script:=lua_tostring(L,1);
-  //script:=importer.GetScript(script); 
+  //script:=importer.GetScript(L, script);
   obj.PSScript.Script.Text:=script;
   if obj.PSScript.Compile then begin
      obj.success:= obj.PSScript.Execute;
+     //writeln(booltoyn(obj.Success));
   end else obj.Success:=false;
-  if obj.success=false then HandleError;//writeln(obj.errormsg);
+
+  if obj.success=false then
+    HandleError;//writeln(obj.errormsg);
   //OutputMessages;
   obj.free;
   importer.free;
@@ -132,20 +135,24 @@ end;
 
 procedure TUndPascal.MyWriteln(s: string);
 begin
-  if redirectio then begin
-   if output=emptystr then output:=s else output:=crlf+output+s;
-  end else Undhelper.writeln(s);
+  Undhelper.writeln(s);
 end;
 
 procedure TUndPascal.MyWrite(s: string);
 begin
-  if redirectio then output:=output+s else  Undhelper.write(s);
+  Undhelper.write(s);
+end;
+
+procedure TUndPascal.MyDebug(s: string);
+begin
+  Undhelper.Debug(s);
 end;
 
 procedure TUndPascal.Compile(Sender: TPSScript);
 begin
   //Sender.AddFunction(@MyReadln, 'function Readln(question: string): string;');
   Sender.Comp.OnExternalProc := @DllExternalProc;
+  Sender.AddMethod(Self,@TUndPascal.MyDebug, 'procedure Debug(s: string);');
   Sender.AddMethod(Self,@TUndPascal.MyWriteln, 'procedure Writeln(s: string);');
   Sender.AddMethod(Self,@TUndPascal.MyWrite, 'procedure Write(s: string);');
   Sender.AddRegisteredVariable('Application', 'TApplication');
@@ -170,7 +177,6 @@ begin
   PSScript.OnExecute:=Execute;
   //PSScript.CompilerOptions:=PSScript.CompilerOptions-[icAllowNoBegin];
   //PSScript.CompilerOptions:=PSScript.CompilerOptions-[icAllowNoEnd];
-  RedirectIO:=false;
   UndHelper.LuaState:=L;
   State:=L;
 end;
