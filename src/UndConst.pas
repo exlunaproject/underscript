@@ -9,13 +9,15 @@ unit UndConst;
 interface
 
 uses
-  SysUtils, Lua, pLua, pLuaTable, CatStrings, CatUtils;
+  SysUtils, CatStrings, CatUtils;
 
 type
  TScriptType = (
   lang_jsnode,
   lang_jsnodestrict,
   lang_jscript,
+  lang_jsquick,
+  lang_jsspider,
   lang_jsv8,
   lang_lua,
   lang_luain,
@@ -81,6 +83,7 @@ type
 type
   TUndLanguageExternal = record
    Command: string;
+   Params: string;
    FileExt: string;
    StringFormat: string;
    VarReadFormat: string;
@@ -214,6 +217,22 @@ const
  );
 
 const
+ langdef_QuickJS: TUndLanguageExternal = (
+   Command: '%u\multipreter\multipreter.exe';
+   Params: 'quickjs %f';
+   FileExt: '.js';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: 'var %k = %v;';
+   FuncWriteFormat: ';console.log("\n%pt=%t,n=%k,v="+%g);';
+   StringEncoder: 'str2hex(%s)';
+   StringDecoder: 'hex2str(%s)';
+   FormatScript: cJsHexEncodeDecodeFuncs+' %s';
+   NilKeyword: 'null';
+   StringEncodeFormat: usfHex;
+ );
+
+const
  langdef_TIScript: TUndLanguageExternal = (
    Command: '%u\tiscript\tiscript.exe';
    FileExt: '.tis';
@@ -243,66 +262,15 @@ const
    StringEncodeFormat: usfHex;
  );
 
-procedure uConsoleDebug(L: plua_State; s: String);
-procedure uConsoleErrorLn(L: plua_State; line: integer; msg: String);
-procedure uConsoleWrite(L: plua_State; s: String);
-procedure uConsoleWriteLn(L: plua_State; s: String);
-procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult);
+procedure uConsoleWriteError(line: integer; msg: String);
 procedure SetCustomModuleName(name:string);
 
 
 implementation
 
-procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult);
+procedure uConsoleWriteError(line: integer; msg: String);
 begin
- lua_newtable(L);
- plua_SetFieldValue(L, 'success', res.success);
- plua_SetFieldValue(L, 'errormsg', res.ErrorMessage);
- plua_SetFieldValue(L, 'expresult', res.expressionresult);
-end;
-
-procedure uConsoleDebug(L: plua_State; s: String);
-const cFuncName = 'debug';
-begin
-  if rudRedirectIO = true then begin
-    if plua_tablefunctionexists(L, cUndConsoleLibName, cFuncName) then
-      plua_tablecallfunction(L, cUndConsoleLibName, cFuncName, [s]);
-  end else begin
-    OutDebug(s);
-  end;
-end;
-
-procedure uConsoleErrorLn(L: plua_State; line: integer; msg: String);
-const cFuncName = 'errorln';
-begin
-  if rudRedirectIO = true then begin
-    if plua_tablefunctionexists(L, cUndConsoleLibName, cFuncName) then
-      plua_tablecallfunction(L, cUndConsoleLibName, cFuncName, [line, msg]);
-  end else begin
-    system.WriteLn('--('+inttostr(line)+'): '+msg);
-  end;
-end;
-
-procedure uConsoleWrite(L: plua_State; s: String);
-const cFuncName = 'write';
-begin
-  if rudRedirectIO = true then begin
-    if plua_tablefunctionexists(L, cUndConsoleLibName, cFuncName) then
-      plua_tablecallfunction(L, cUndConsoleLibName, cFuncName, [s]);
-  end else begin
-    system.Write(s);
-  end;
-end;
-
-procedure uConsoleWriteLn(L: plua_State; s: String);
-const cFuncName = 'writeln';
-begin
-  if rudRedirectIO = true then begin
-    if plua_tablefunctionexists(L, cUndConsoleLibName, cFuncName) then
-      plua_tablecallfunction(L, cUndConsoleLibName, cFuncName, [s]);
-  end else begin
-    system.WriteLn(s);
-  end;
+  system.WriteLn('--('+inttostr(line)+'): '+msg);
 end;
 
 procedure SetCustomModuleName(name:string);

@@ -16,13 +16,15 @@ library Underscript;
 {$DEFINE UNDER_PASCAL_CLASSIC}
 {$DEFINE UNDER_PHP}
 {$DEFINE UNDER_PYTHON_ENV}
-{$DEFINE UNDER_RUBY}  
+{$DEFINE UNDER_RUBY}
+{$DEFINE UNDER_LEGACY}
 
 uses
   SysUtils, TypInfo, Lua, pLua, pLuaTable, CatCSCommand, UndConst, UndScriptExt,
-  {$IFDEF UNDER_ACTIVESCRIPT}  
+  UndConsole,
+  {$IFDEF UNDER_ACTIVESCRIPT}
   uActiveScript, 
-  {$ENDIF}  
+  {$ENDIF}
   {$IFDEF UNDER_PASCAL}
   uPascal_DWS,
   dws2Comp in 'thirdparty\pascal\dws2Comp.pas',
@@ -81,7 +83,19 @@ uses
   PythonEngine in 'thirdparty\python\PythonEngine.pas',
   MethodCallBack in 'thirdparty\python\MethodCallBack.pas',
   VarPyth in 'thirdparty\python\VarPyth.pas',
-  {$ENDIF}  
+  {$ENDIF}
+  {$IFDEF UNDER_JAVASCRIPT_SPIDERMONKEY}
+  uJavaScript_SM,
+  js15decl in 'thirdparty\js_spidermonkey\js15decl.pas',
+  jsDbgServer in 'thirdparty\js_spidermonkey\jsDbgServer.pas',
+  jsintf in 'thirdparty\js_spidermonkey\jsintf.pas',
+  NamedPipesImpl in 'thirdparty\js_spidermonkey\NamedPipesImpl.pas',
+  {$ENDIF}
+  {$IFDEF UNDER_JAVASCRIPT_QUICKJS}
+  uJavaScript_Quick,
+  quickjs in 'thirdparty\js_quickjs\quickjs.pas',
+  {$ENDIF}
+
   CatStrings;
 
 // Reduces exe size
@@ -114,6 +128,7 @@ begin
   end;
 end;
 
+// 64-bit interpreters
 function lua_getscriptfunc(L: plua_State):integer; cdecl;
 var lng:string;
 begin
@@ -146,6 +161,8 @@ begin
   lang_jsnode: lua_pushcfunction(L, lua_run_nodejs);
   lang_jsnodestrict: lua_pushcfunction(L, lua_run_nodejs_strict);
   lang_jsv8: lua_pushcfunction(L, lua_run_jsv8);
+  lang_jsspider: lua_pushcfunction(L, lua_run_jsspidermonkey);
+  lang_jsquick: lua_pushcfunction(L, lua_run_quickjs);
   // This will execute the script using an embedded Python (if any)
   lang_python: lua_pushcfunction(L, lua_run_python);
   lang_perl: lua_pushcfunction(L, lua_run_perl);
@@ -153,6 +170,20 @@ begin
   lang_ruby: lua_pushcfunction(L,lua_run_ruby);
   lang_tiscript: lua_pushcfunction(L,lua_run_tiscript);
   lang_tcl: lua_pushcfunction(L,lua_run_tcl);
+ else
+  result:=0;
+ end;
+end;
+
+// Legacy 32-bit interpreters
+function lua_getscript32func(L: plua_State):integer; cdecl;
+var lng:string;
+begin
+ result:=1;
+ lng:=lua_tostring(L,2);
+ case TScriptType(GetEnumValue(TypeInfo(TScriptType), 'lang_'+lowercase(lng))) of
+  lang_lua: lua_pushcfunction(L,lua_run_luav51);
+  lang_luav51: lua_pushcfunction(L,lua_run_luav51);
  else
   result:=0;
  end;
@@ -237,12 +268,18 @@ begin
  plua_SetFieldValue(L,'run',@lua_getscriptfunc,nil);
  plua_SetFieldValue(L,'runext',@lua_getscriptfuncbyfileext,nil);
  plua_SetFieldValue(L,'options',@lua_getoption,@lua_setoption);
+ {$IFDEF UNDER_LEGACY}
+ plua_SetFieldValue(L,'run32',@lua_getscript32func,nil);
+ {$ENDIF}
  Result := 1;
 end;
 
 function luaopen_Underscript(L: plua_State): integer; cdecl;
 begin
   plua_RegisterLuaTable(L, '_script', @lua_getscriptfunc, nil);
+  {$IFDEF UNDER_LEGACY}
+  plua_RegisterLuaTable(L, '_script32', @lua_getscript32func, nil);
+  {$ENDIF}
   Result := 0;
 end;
 

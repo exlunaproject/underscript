@@ -13,7 +13,7 @@ interface
 
 uses
   Classes, Lua, pLua, Variants, SysUtils, CatStrings, CatCSCommand, CatFiles,
-  CatStringLoop, CatUtils, UndConst;
+  CatStringLoop, CatUtils, UndConst, UndConsole;
 
 type
   TUndExternal = class
@@ -296,7 +296,7 @@ function TUndExternal.RunScript(L: Plua_State; script: string):integer;
 var
   r: TUndScriptResult;
   cmd: TCatCSCommand;
-  fn, progdir, underpath, command: string;
+  fn, progdir, underpath, command, params: string;
   sl: TStringList;
   timeout: integer;
 begin
@@ -318,6 +318,11 @@ begin
   script := replacestr(fLanguage.FormatScript, '%s', script);
 
   fn := GetTempFile(fLanguage.FileExt);
+  params := fn;
+  if pos('%',fLanguage.Params) <> 0 then
+  params := replacestr(fLanguage.Params, '%f', fn);
+
+
   sl := TStringList.Create;
   sl.Text := script;
   sl.SaveToFile(fn);
@@ -326,7 +331,7 @@ begin
     cmd.OnOutput := HandleOutputAlt;
     cmd.Timeout := timeout;
     {$IFDEF DXE2_OR_UP}
-    RunCmdWithCallBack(command, fn,
+    RunCmdWithCallBack(command, params,
       procedure(const Line: string)
       begin
         //outdebug('out:'+Line);

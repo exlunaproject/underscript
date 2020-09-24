@@ -1,5 +1,13 @@
 ## JavaScript Support
 
+You can run JS code through the following methods:
+
+* _script.**jscript** - MS JavaScript engine
+* _script.**jsnode** or **jsnodestrict** - Node.JS
+* _script.**jsquick** - QuickJS
+* _script.**jsspider** - SpiderMonkey engine
+* _script.**jsv8** - Pure V8 engine
+
 ### Hello World (Using NodeJS)
 
 ```lua

@@ -9,7 +9,8 @@ unit UndHelper_AS;
 interface
 
 uses
-  ObjComAuto, Lua, pLua, Variants, CatJSON, CatUtils, SysUtils, UndConst;
+  ObjComAuto, Lua, pLua, Variants, CatJSON, CatUtils, SysUtils, UndConst,
+  UndConsole;
 
 type
 {$METHODINFO ON}

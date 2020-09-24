@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, lua, plua, LuaObject, ActiveX, CatJSRunnerAS, UndHelper_AS,
-  CatStrings, UndImporter, UndConst, TypInfo;
+  CatStrings, UndImporter, UndConst, UndConsole, TypInfo;
 
 const
   cDefaultLanguage: string = 'JavaScript';

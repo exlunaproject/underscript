@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, lua, plua, LuaObject, PythonEngine, UndHelper_AS,
-  UndImporter, VarPyth, UndConst;
+  UndImporter, VarPyth, UndConst, UndConsole;
 
 const
   cObjectName = 'RPython';

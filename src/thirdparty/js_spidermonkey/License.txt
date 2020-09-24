@@ -1,0 +1,8 @@
+Javascript engine for delphi based on spidermonkey
+
+    Delphi 2010 or later is required.
+    For accessing Indexed properties you will need Delphi XE2 or later. This is because Delphi XE2 add RTTI support for indexed properties
+
+Project owner: visagesoft http://www.visagesoft.com
+
+License: Apache License 2.0 http://www.apache.org/licenses/LICENSE-2.0

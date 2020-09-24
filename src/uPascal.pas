@@ -16,7 +16,7 @@ uses
 {$ELSE}
   Classes, SysUtils, Forms,
 {$ENDIF}
-  lua, plua, LuaObject, uPSCompiler, uPSRuntime, CatStrings,
+  lua, plua, LuaObject, uPSCompiler, uPSRuntime, CatStrings, UndConsole,
   UndHelper_Obj, uPSComponent, UndImporter, UndConst;
 
 type

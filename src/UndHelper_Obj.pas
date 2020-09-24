@@ -9,9 +9,10 @@ unit UndHelper_Obj;
 interface
 
 uses
-  Lua, pLua, Variants, UndConst;
+  Lua, pLua, Variants, UndConst, UndConsole;
 
 type
+{$METHODINFO ON}
   TUndHelper = class
   public
     LuaState: PLua_State;
@@ -25,6 +26,7 @@ type
     function GetL(valName: String): Variant;
     procedure SetL(valName: String; const AValue: Variant);
   end;
+{$METHODINFO OFF}
 
 var
   UndHelper: TUndHelper;

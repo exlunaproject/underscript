@@ -19,6 +19,8 @@ function lua_run_luav54(L: plua_State):integer; cdecl;
 function lua_run_nodejs(L: plua_State):integer; cdecl;
 function lua_run_nodejs_strict(L: plua_State):integer; cdecl;
 function lua_run_jsv8(L: plua_State):integer; cdecl;
+function lua_run_jsspidermonkey(L: plua_State):integer; cdecl;
+function lua_run_quickjs(L: plua_State):integer; cdecl;
 function lua_run_php(L: plua_State):integer; cdecl;
 function lua_run_ruby(L: plua_State):integer; cdecl;
 function lua_run_perl(L: plua_State):integer; cdecl;
@@ -26,7 +28,13 @@ function lua_run_python(L: plua_State):integer; cdecl;
 function lua_run_tiscript(L: plua_State):integer; cdecl;
 function lua_run_tcl(L: plua_State):integer; cdecl;
 
+function lua_run32_luav51(L: plua_State):integer; cdecl;
+
 implementation
+
+// ************************************************************************** //
+// 64-bit Interpreters
+// ************************************************************************** //
 
 function lua_run_luajit(L: plua_State):integer; cdecl;
 var lang:TUndLanguageExternal;
@@ -91,6 +99,22 @@ begin
     RunExternalScript(L, lua_tostring(L,1), langdef_V8JS);
 end;
 
+function lua_run_jsspidermonkey(L: plua_State):integer; cdecl;
+var lang:TUndLanguageExternal;
+begin
+  lang := langdef_V8JS;
+  lang.Command := '%u\multipreter\multipreter.exe';
+  lang.Params := 'spidermonkey %f';
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), lang);
+end;
+
+function lua_run_quickjs(L: plua_State):integer; cdecl;
+begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), langdef_QuickJS);
+end;
+
 function lua_run_php(L: plua_State):integer; cdecl;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK then
@@ -125,6 +149,19 @@ function lua_run_tcl(L: plua_State):integer; cdecl;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK then
     RunExternalScript(L, lua_tostring(L,1), langdef_TCL);
+end;
+
+// ************************************************************************** //
+// Legacy 32-bit Interpreters
+// ************************************************************************** //
+
+function lua_run32_luav51(L: plua_State):integer; cdecl;
+var lang:TUndLanguageExternal;
+begin
+  lang := langdef_Lua;
+  lang.Command:='%u32\lua5.1.exe';
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), lang);
 end;
 
 end.
