@@ -95,9 +95,7 @@ uses
   JSK.Base in 'thirdparty\js_javascriptcore\JSK.Base.pas',
   JSK.API in 'thirdparty\js_javascriptcore\JSK.API.pas',
   {$ENDIF}
-
   CatStrings;
-
 
 
 {$R *.res}
@@ -132,7 +130,7 @@ const
    (name:'node';func:lua_run_nodejs),
    (name:'nodestrict';func:lua_run_nodejs_strict),
    (name:'quick';func:JavaScriptQuick_Run),
-   (name:'spider';func:lua_run_jsspidermonkey),
+   (name:'spider';func:JavaScriptSM_Run),
    (name:'tiscript';func:lua_run_tiscript),
    (name:'v8';func:lua_run_jsv8),
    (name:nil;func:nil)

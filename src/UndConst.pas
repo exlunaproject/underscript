@@ -12,67 +12,6 @@ uses
   SysUtils, CatStrings, CatUtils;
 
 const
-  ULANG_JAVA = 1;
-  ULANG_JAVABSC = 2;
-  ULANG_JSCORE = 3;
-  ULANG_JSNODE = 4;
-  ULANG_JSNODESTRICT = 5;
-  ULANG_JSCRIPT = 6;
-  ULANG_JSQUICK = 7;
-  ULANG_JSSPIDER = 8;
-  ULANG_JSV8 = 9;
-  ULANG_LUAIN = 11;
-  ULANG_LUAJIT = 12;
-  ULANG_LUAV51 = 13;
-  ULANG_LUAV52 = 14;
-  ULANG_LUAV53 = 15;
-  ULANG_LUAV54 = 16;
-  ULANG_PASCALPAGE = 17;
-  ULANG_PASCALPROG = 18;
-  ULANG_PASCALSCRIPT = 19;
-  ULANG_PYTHON = 20;
-  ULANG_PYTHONENV = 21;
-  ULANG_PERL = 22;
-  ULANG_PERLACTIVE = 23;
-  ULANG_PHP = 24;
-  ULANG_RUBY = 25;
-  ULANG_TCL = 26;
-  ULANG_TISCRIPT = 27;
-  ULANG_VBSCRIPT = 28;
-
-type
- TScriptType = (
-  lang_java,
-  lang_javabsc,
-  lang_jscore,
-  lang_jsnode,
-  lang_jsnodestrict,
-  lang_jscript,
-  lang_jsquick,
-  lang_jsspider,
-  lang_jsv8,
-  lang_lua,
-  lang_luain,
-  lang_luajit,
-  lang_luav51,
-  lang_luav52,
-  lang_luav53,
-  lang_luav54,
-  lang_pascalpage,
-  lang_pascalprog,
-  lang_pascalscript,
-  lang_python,
-  lang_pythonenv,
-  lang_perl,
-  lang_perlactive,
-  lang_php,
-  lang_ruby,
-  lang_tcl,
-  lang_tiscript,
-  lang_vbscript
- );
-
-const
   // Important: this constant must be have the first letter uppercase because of Ruby compatibility
   cUnd = 'UConsole';
   cUndConsoleLibName = 'uconsole';
