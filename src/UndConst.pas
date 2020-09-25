@@ -15,6 +15,7 @@ type
  TScriptType = (
   lang_java,
   lang_javabsc,
+  lang_jscore,
   lang_jsnode,
   lang_jsnodestrict,
   lang_jscript,

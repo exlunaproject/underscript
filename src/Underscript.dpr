@@ -14,6 +14,8 @@ library Underscript;
 {$DEFINE UNDER_ACTIVESCRIPT}
 {$DEFINE UNDER_PASCAL}
 {$DEFINE UNDER_PASCAL_CLASSIC}
+{$DEFINE UNDER_JAVASCRIPTCORE}
+{$DEFINE UNDER_JAVASCRIPT_QUICKJS}
 {$DEFINE UNDER_PHP}
 {$DEFINE UNDER_PYTHON_ENV}
 {$DEFINE UNDER_RUBY}
@@ -92,8 +94,13 @@ uses
   NamedPipesImpl in 'thirdparty\js_spidermonkey\NamedPipesImpl.pas',
   {$ENDIF}
   {$IFDEF UNDER_JAVASCRIPT_QUICKJS}
-  uJavaScript_Quick,
+  uJavaScript_QJS,
   quickjs in 'thirdparty\js_quickjs\quickjs.pas',
+  {$ENDIF}
+  {$IFDEF UNDER_JAVASCRIPTCORE}
+  uJavaScript_JSC,  
+  JSK.Base in 'thirdparty\js_javascriptcore\JSK.Base.pas',
+  JSK.API in 'thirdparty\js_javascriptcore\JSK.API.pas',
   {$ENDIF}
 
   CatStrings;
@@ -160,11 +167,13 @@ begin
   {$ENDIF}
   lang_java: lua_pushcfunction(L, lua_run_java);
   lang_javabsc: lua_pushcfunction(L, lua_run_javabshcore);
+  lang_jscore: lua_pushcfunction(L, JavaScriptJSC_Run);
   lang_jsnode: lua_pushcfunction(L, lua_run_nodejs);
   lang_jsnodestrict: lua_pushcfunction(L, lua_run_nodejs_strict);
   lang_jsv8: lua_pushcfunction(L, lua_run_jsv8);
   lang_jsspider: lua_pushcfunction(L, lua_run_jsspidermonkey);
-  lang_jsquick: lua_pushcfunction(L, lua_run_quickjs);
+  lang_jsquick: lua_pushcfunction(L, JavaScriptQuick_Run);
+  //lang_jsquick: lua_pushcfunction(L, lua_run_quickjs);
   // This will execute the script using an embedded Python (if any)
   lang_python: lua_pushcfunction(L, lua_run_python);
   lang_perl: lua_pushcfunction(L, lua_run_perl);

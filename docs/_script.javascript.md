@@ -3,8 +3,9 @@
 You can run JS code through the following methods:
 
 * _script.**jscript** - MS JavaScript engine
+* _script.**jscore** - Apple's JavaScriptCore engine
 * _script.**jsnode** or **jsnodestrict** - Node.JS
-* _script.**jsquick** - QuickJS
+* _script.**jsquick** - QuickJS engine
 * _script.**jsspider** - SpiderMonkey engine
 * _script.**jsv8** - Pure V8 engine
 

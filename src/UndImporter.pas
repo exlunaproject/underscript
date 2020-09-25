@@ -19,6 +19,8 @@ type
     fEnableImport: boolean;
     fInitScript: string;
     fEndScript: string;
+    fImportNil: boolean;
+    function CanAddKey(lt: integer; n: string): boolean;
     function GetLocalsImport(L: Plua_State; LocalFormatStr: string;
       sl: TStringList): string;
     function GetFormatedImport(const s: string;v:TUndLuaVariable): string;
@@ -34,11 +36,12 @@ type
     // properties
     property EnableDebug:boolean read fEnableDebug write fEnableDebug;
     property EnableImport:boolean read fEnableImport write fEnableImport;
+    property ImportNil:boolean read fImportNil write fImportNil;
   end;
 
 implementation
 
-function CanAddKey(lt: integer; n: string): boolean;
+function TUndImporter.CanAddKey(lt: integer; n: string): boolean;
 begin
   result := false;
   case lt of
@@ -49,7 +52,8 @@ begin
     LUA_TNUMBER:
       result := true;
     LUA_TNIL:
-      result := true;
+      if fImportNil then
+        result := true;
   end;
   // Do not import variables starting with underscore
   if beginswith(n, '_') then
@@ -64,6 +68,7 @@ begin
   result := replacestr(result, '%l', rudLibName);
   result := replacestr(result, '%k', v.name);
   result := replacestr(result, '%t', v.LuaTypeStr);
+  result := replacestr(result, '%c', titlecase(v.LuaTypeStr));
 end;
 
 function TUndImporter.GetLocalsImport(L: Plua_State; LocalFormatStr: string;
@@ -205,6 +210,7 @@ begin
   inherited Create;
   fEnableImport := true;
   fEnableDebug := false;
+  fImportNil := true;
 end;
 
 destructor TUndImporter.Destroy;
