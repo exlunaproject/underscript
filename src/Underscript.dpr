@@ -158,6 +158,8 @@ begin
   // This will execute the script using a installed Python in your environment
   lang_pythonenv: lua_pushcfunction(L,Python_Run);
   {$ENDIF}
+  lang_java: lua_pushcfunction(L, lua_run_java);
+  lang_javabsc: lua_pushcfunction(L, lua_run_javabshcore);
   lang_jsnode: lua_pushcfunction(L, lua_run_nodejs);
   lang_jsnodestrict: lua_pushcfunction(L, lua_run_nodejs_strict);
   lang_jsv8: lua_pushcfunction(L, lua_run_jsv8);

@@ -13,6 +13,8 @@ uses
 
 type
  TScriptType = (
+  lang_java,
+  lang_javabsc,
   lang_jsnode,
   lang_jsnodestrict,
   lang_jscript,
@@ -260,6 +262,20 @@ const
    FormatScript: '%s';
    NilKeyword: '""';
    StringEncodeFormat: usfHex;
+ );
+
+const
+ langdef_Java: TUndLanguageExternal = (
+   Command: '%u\beanshell\bsh.exe';
+   FileExt: '.java';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: '%k = %v;';
+   FuncWriteFormat: ';System.out.print("\n%pt=%t,n=%k,v="+%g);';
+   StringEncoder: 'Base64.getEncoder().encodeToString(%s.getBytes())';
+   StringDecoder: '(new String(Base64.getDecoder().decode(%s)))';
+   FormatScript: '%s';
+   NilKeyword: 'null';
  );
 
 procedure uConsoleWriteError(line: integer; msg: String);

@@ -18,6 +18,8 @@ function lua_run_luav53(L: plua_State):integer; cdecl;
 function lua_run_luav54(L: plua_State):integer; cdecl;
 function lua_run_nodejs(L: plua_State):integer; cdecl;
 function lua_run_nodejs_strict(L: plua_State):integer; cdecl;
+function lua_run_java(L: plua_State):integer; cdecl;
+function lua_run_javabshcore(L: plua_State):integer; cdecl;
 function lua_run_jsv8(L: plua_State):integer; cdecl;
 function lua_run_jsspidermonkey(L: plua_State):integer; cdecl;
 function lua_run_quickjs(L: plua_State):integer; cdecl;
@@ -97,6 +99,21 @@ function lua_run_jsv8(L: plua_State):integer; cdecl;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK then
     RunExternalScript(L, lua_tostring(L,1), langdef_V8JS);
+end;
+
+function lua_run_java(L: plua_State):integer; cdecl;
+begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), langdef_Java);
+end;
+
+function lua_run_javabshcore(L: plua_State):integer; cdecl;
+var lang: TUndLanguageExternal;
+begin
+  lang := langdef_Java;
+  lang.Command := '%u\beanshell\bsh-core.exe';
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), lang);
 end;
 
 function lua_run_jsspidermonkey(L: plua_State):integer; cdecl;
