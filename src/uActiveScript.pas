@@ -20,6 +20,7 @@ type
 function JavaScript_Run(L: plua_State): integer; cdecl;
 function PerlScript_Run(L: plua_State): integer; cdecl;
 function VBScript_Run(L: plua_State): integer; cdecl;
+function ActiveScript_Run(L: plua_State): integer; cdecl;
 
 implementation
 

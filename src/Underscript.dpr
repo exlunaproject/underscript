@@ -11,21 +11,14 @@ library Underscript;
  various versions of Lua itself (5.1 to 5.4)
 }
 
-{$DEFINE UNDER_ACTIVESCRIPT}
-{$DEFINE UNDER_PASCAL}
-{$DEFINE UNDER_PASCAL_CLASSIC}
-{$DEFINE UNDER_JAVASCRIPTCORE}
-{$DEFINE UNDER_JAVASCRIPT_QUICKJS}
-{$DEFINE UNDER_PHP}
-{$DEFINE UNDER_PYTHON_ENV}
-{$DEFINE UNDER_RUBY}
-{$DEFINE UNDER_LEGACY}
+{$I Underscript.inc}
+{$I CatCompactLib.inc}
 
 uses
   SysUtils, TypInfo, Lua, pLua, pLuaTable, CatCSCommand, UndConst, UndScriptExt,
   UndConsole,
   {$IFDEF UNDER_ACTIVESCRIPT}
-  uActiveScript, 
+  uActiveScript,
   {$ENDIF}
   {$IFDEF UNDER_PASCAL}
   uPascal_DWS,
@@ -105,12 +98,7 @@ uses
 
   CatStrings;
 
-// Reduces exe size
-{$IFDEF RELEASE}
-{$WEAKLINKRTTI ON}
-{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
-{$ENDIF}
-// Reduces exe size end
+
 
 {$R *.res}
 
@@ -135,103 +123,105 @@ begin
   end;
 end;
 
-// 64-bit interpreters
-function lua_getscriptfunc(L: plua_State):integer; cdecl;
-var lng:string;
+function lua_getjavascriptfunc(L: plua_State):integer; cdecl;
+const
+   table : array [1..9] of luaL_Reg =
+   (
+   (name:'jscript';func:JavaScript_Run),
+   (name:'core';func:JavaScriptJSC_Run),
+   (name:'node';func:lua_run_nodejs),
+   (name:'nodestrict';func:lua_run_nodejs_strict),
+   (name:'quick';func:JavaScriptQuick_Run),
+   (name:'spider';func:lua_run_jsspidermonkey),
+   (name:'tiscript';func:lua_run_tiscript),
+   (name:'v8';func:lua_run_jsv8),
+   (name:nil;func:nil)
+   );
 begin
- result:=1;
- lng:=lua_tostring(L,2);
- case TScriptType(GetEnumValue(TypeInfo(TScriptType), 'lang_'+lowercase(lng))) of
-  lang_lua: lua_pushcfunction(L,lua_run_luav51);
-  lang_luain: lua_pushcfunction(L,lua_run_luacode);
-  lang_luajit: lua_pushcfunction(L,lua_run_luajit);
-  lang_luav51: lua_pushcfunction(L,lua_run_luav51);
-  lang_luav52: lua_pushcfunction(L,lua_run_luav52);
-  lang_luav53: lua_pushcfunction(L,lua_run_luav53);
-  lang_luav54: lua_pushcfunction(L,lua_run_luav54);
-  {$IFDEF UNDER_ACTIVESCRIPT}
-  lang_jscript: lua_pushcfunction(L,JavaScript_Run);
-  lang_vbscript: lua_pushcfunction(L,VBScript_Run);
-  lang_perlactive: lua_pushcfunction(L,PerlScript_Run);
-  {$ENDIF}
-  {$IFDEF UNDER_PASCAL}
-  lang_pascalpage: lua_pushcfunction(L,PascalWebScript_Run);
-  lang_pascalscript: lua_pushcfunction(L,PascalScript_Run);
-  {$ENDIF}
-  {$IFDEF UNDER_PASCAL_CLASSIC}
-  lang_pascalprog: lua_pushcfunction(L,PascalClassic_Run);
-  {$ENDIF}
-  {$IFDEF UNDER_PYTHON_ENV}
-  // This will execute the script using a installed Python in your environment
-  lang_pythonenv: lua_pushcfunction(L,Python_Run);
-  {$ENDIF}
-  lang_java: lua_pushcfunction(L, lua_run_java);
-  lang_javabsc: lua_pushcfunction(L, lua_run_javabshcore);
-  lang_jscore: lua_pushcfunction(L, JavaScriptJSC_Run);
-  lang_jsnode: lua_pushcfunction(L, lua_run_nodejs);
-  lang_jsnodestrict: lua_pushcfunction(L, lua_run_nodejs_strict);
-  lang_jsv8: lua_pushcfunction(L, lua_run_jsv8);
-  lang_jsspider: lua_pushcfunction(L, lua_run_jsspidermonkey);
-  lang_jsquick: lua_pushcfunction(L, JavaScriptQuick_Run);
-  //lang_jsquick: lua_pushcfunction(L, lua_run_quickjs);
-  // This will execute the script using an embedded Python (if any)
-  lang_python: lua_pushcfunction(L, lua_run_python);
-  lang_perl: lua_pushcfunction(L, lua_run_perl);
-  lang_php: lua_pushcfunction(L, lua_run_php);
-  lang_ruby: lua_pushcfunction(L,lua_run_ruby);
-  lang_tiscript: lua_pushcfunction(L,lua_run_tiscript);
-  lang_tcl: lua_pushcfunction(L,lua_run_tcl);
- else
-  result:=0;
- end;
+   result := plua_pushcfunction_fromarray(L, lua_tostring(L,2), table);
 end;
 
-// Legacy 32-bit interpreters
-function lua_getscript32func(L: plua_State):integer; cdecl;
-var lng:string;
+function lua_getluascriptfunc(L: plua_State):integer; cdecl;
+const
+   table : array [1..8] of luaL_Reg =
+   (
+   (name:'current';func:lua_run_luav51),
+   (name:'in';func:lua_run_luacode),
+   (name:'jit';func:lua_run_luajit),
+   (name:'v51';func:lua_run_luav51),
+   (name:'v52';func:lua_run_luav52),
+   (name:'v53';func:lua_run_luav53),
+   (name:'v54';func:lua_run_luav54),
+   (name:nil;func:nil)
+   );
 begin
- result:=1;
- lng:=lua_tostring(L,2);
- case TScriptType(GetEnumValue(TypeInfo(TScriptType), 'lang_'+lowercase(lng))) of
-  lang_lua: lua_pushcfunction(L,lua_run_luav51);
-  lang_luav51: lua_pushcfunction(L,lua_run_luav51);
- else
-  result:=0;
- end;
+  result := plua_pushcfunction_fromarray(L, lua_tostring(L,2), table);
 end;
 
-type
-  TScriptExts = (
-    extdpr, extdws, extjs, extlua, extpas, extphp, extpl, extpy, extrb, exttis, extvbs,
-    exttcl);
+function lua_getjavafunc(L: plua_State):integer; cdecl;
+const
+   table : array [1..3] of luaL_Reg =
+   (
+   (name:'bsh';func:lua_run_java),
+   (name:'bshcore';func:lua_run_javabshcore),
+   (name:nil;func:nil)
+   );
+begin
+  result := plua_pushcfunction_fromarray(L, lua_tostring(L,2), table);
+end;
+
+function lua_getpascalscriptfunc(L: plua_State):integer; cdecl;
+const
+   table : array [1..4] of luaL_Reg =
+   (
+   (name:'page';func:PascalWebScript_Run),
+   (name:'dws';func:PascalScript_Run),
+   (name:'prog';func:PascalClassic_Run),
+   (name:nil;func:nil)
+   );
+begin
+  result := plua_pushcfunction_fromarray(L, lua_tostring(L,2), table);
+end;
+
+// Experimental interpreters
+function lua_getalphascriptfunc(L: plua_State):integer; cdecl;
+const
+   table : array [1..3] of luaL_Reg =
+   (
+   (name:'perlactive';func:PerlScript_Run),
+ // This will execute the script using a installed Python in your environment
+   (name:'pythonenv';func:Python_Run),
+   (name:nil;func:nil)
+   );
+begin
+  result := plua_pushcfunction_fromarray(L, lua_tostring(L,2), table);
+end;
+
 function lua_getscriptfuncbyfileext(L: plua_State):integer; cdecl;
 var ext:string;
+const
+   table : array [1..14] of luaL_Reg =
+   (
+   (name:'lua';func:lua_run_luav51),
+   (name:'java';func:lua_run_java),
+   (name:'js';func:JavaScript_Run),
+   (name:'vbs';func:VBScript_Run),
+   (name:'dws';func:PascalWebScript_Run),
+   (name:'dpr';func:PascalClassic_Run),
+   (name:'pas';func:PascalClassic_Run),
+   (name:'php';func:lua_run_php),
+   (name:'py';func:lua_run_python),
+   (name:'pl';func:lua_run_perl),
+   (name:'rb';func:lua_run_ruby),
+   (name:'tis';func:lua_run_tiscript),
+   (name:'tcl';func:lua_run_tcl),
+   (name:nil;func:nil)
+   );
 begin
- result:=1;
  ext:=lua_tostring(L,2);
  if beginswith(ext, '.') then
    ext := after(ext, '.');
- case TScriptExts(GetEnumValue(TypeInfo(TScriptExts), 'ext'+lowercase(ext))) of
-  extlua: lua_pushcfunction(L,lua_run_luav51);
-  {$IFDEF UNDER_ACTIVESCRIPT}
-  extjs: lua_pushcfunction(L,JavaScript_Run);
-  extvbs: lua_pushcfunction(L,VBScript_Run);
-  {$ENDIF}
-  {$IFDEF UNDER_PASCAL}
-  extdws: lua_pushcfunction(L,PascalWebScript_Run);
-  {$ENDIF}
-  {$IFDEF UNDER_PASCAL_CLASSIC}
-  extdpr, extpas: lua_pushcfunction(L,PascalClassic_Run);
-  {$ENDIF}
-  extpy: lua_pushcfunction(L, lua_run_python);
-  extpl: lua_pushcfunction(L, lua_run_perl);
-  extphp: lua_pushcfunction(L, lua_run_php);
-  extrb: lua_pushcfunction(L,lua_run_ruby);
-  exttis: lua_pushcfunction(L,lua_run_tiscript);
-  exttcl: lua_pushcfunction(L,lua_run_tcl);
- else
-  result:=0;
- end;
+ result := plua_pushcfunction_fromarray(L, ext, table);
 end;
 
 type
@@ -276,21 +266,36 @@ end;
 function luaopen_Underscript_Runner(L: plua_State):integer; cdecl;
 begin
  lua_newtable(L);
- plua_SetFieldValue(L,'run',@lua_getscriptfunc,nil);
  plua_SetFieldValue(L,'runext',@lua_getscriptfuncbyfileext,nil);
  plua_SetFieldValue(L,'options',@lua_getoption,@lua_setoption);
- {$IFDEF UNDER_LEGACY}
- plua_SetFieldValue(L,'run32',@lua_getscript32func,nil);
- {$ENDIF}
  Result := 1;
 end;
 
 function luaopen_Underscript(L: plua_State): integer; cdecl;
+const
+ script_table : array [1..13] of luaL_reg =
+ (
+ (name:'luascript';func:lua_run_luav51),
+ (name:'luascript32'; func: lua_run32_luav51),
+ (name:'pascalscript';func:PascalScript_Run),
+ (name:'perl';func:lua_run_perl),
+ (name:'php';func:lua_run_php),
+ (name:'python';func:lua_run_python),
+ (name:'java';func: lua_run_java),
+ (name:'javascript';func:JavaScriptJSC_Run),
+ (name:'jscript';func:JavaScript_Run),
+ (name:'ruby';func:lua_run_ruby),
+ (name:'tcl';func:lua_run_tcl),
+ (name:'vbscript';func:VBScript_Run),
+ (name:nil;func:nil)
+ );
 begin
-  plua_RegisterLuaTable(L, '_script', @lua_getscriptfunc, nil);
-  {$IFDEF UNDER_LEGACY}
-  plua_RegisterLuaTable(L, '_script32', @lua_getscript32func, nil);
-  {$ENDIF}
+  lual_register(L,'_script',@script_table);
+  plua_SetFieldValue(L, 'alpha', @lua_getalphascriptfunc, nil);
+  plua_SetFieldValue(L, 'javax', @lua_getjavafunc, nil);
+  plua_SetFieldValue(L, 'js', @lua_getjavascriptfunc, nil);
+  plua_SetFieldValue(L, 'lua', @lua_getluascriptfunc, nil);
+  plua_SetFieldValue(L, 'pascal', @lua_getpascalscriptfunc, nil);
   Result := 0;
 end;
 

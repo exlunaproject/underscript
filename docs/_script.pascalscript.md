@@ -20,7 +20,7 @@ say(" Hello World! ")
 ```lua
 require "Underscript"
 
-function printcrc16() _script.pascalprog
+function printcrc16() _script.pascal.prog
  [[
 const DivPol = $1021;
 const Amount = 20000;

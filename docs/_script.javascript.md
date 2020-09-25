@@ -2,12 +2,13 @@
 
 You can run JS code through the following methods:
 
+* _script.**javascript** - default JS engine
 * _script.**jscript** - MS JavaScript engine
-* _script.**jscore** - Apple's JavaScriptCore engine
-* _script.**jsnode** or **jsnodestrict** - Node.JS
-* _script.**jsquick** - QuickJS engine
-* _script.**jsspider** - SpiderMonkey engine
-* _script.**jsv8** - Pure V8 engine
+* _script.js.**core** - Apple's JavaScriptCore engine
+* _script.js.**node** or **jsnodestrict** - Node.JS
+* _script.js.**quick** - QuickJS engine
+* _script.js.**spider** - SpiderMonkey engine
+* _script.js.**v8** - Pure V8 engine
 
 ### Hello World (Using NodeJS)
 
@@ -15,7 +16,7 @@ You can run JS code through the following methods:
 require "Underscript"
 
 -- Prints "Hello World!" in uppercase
-function say(s) _script.jsnode
+function say(s) _script.js.node
  [[
  console.log(s.toUpperCase()+'!');
  ]]
@@ -30,7 +31,7 @@ say('Hello World')
 require "Underscript"
 
 -- Prints "Hello World!" in uppercase
-function say(s) _script.jsv8
+function say(s) _script.js.v8
  [[
  print(s.toUpperCase()+'!');
  ]]

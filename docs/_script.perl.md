@@ -23,7 +23,7 @@ say('Hello World')
 require "Underscript"
 
 -- Prints "Hello World!"
-function say(s) _script.perlactive
+function say(s) _script.alpha.perlactive
  [[
  $UConsole->WriteLn($s.'!');
  ]]

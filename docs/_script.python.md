@@ -21,6 +21,6 @@ Note: The Python installer must be downloaded separately from the [official site
 
 ```lua
 -- See above example 
-function say(s) _script.pythonenv
+function say(s) _script.alpha.pythonenv
 -- ..
 ```
