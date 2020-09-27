@@ -39,17 +39,18 @@ type
 
 function PascalScript_Run(L: Plua_State): integer; cdecl;
 function PascalWebScript_Run(L: Plua_State): integer; cdecl;
-function DWSScript_Run(L: Plua_State; isfilter: Boolean): integer; cdecl;
+function DWSScript_Run(L: Plua_State; const isfilter: Boolean): integer; cdecl;
 
 implementation
 
-function DWSScript_Run(L: Plua_State; isfilter: Boolean): integer; cdecl;
+function DWSScript_Run(L: Plua_State; const isfilter: Boolean): integer; cdecl;
 var
   r: TUndScriptResult;
   obj: TUndDWS;
   script, result_str: string;
   importer: TUndImporter;
   i: integer;
+  langdef: TUndLanguageInternal;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
     Exit;
@@ -57,17 +58,16 @@ begin
   obj := TUndDWS.Create(L);
   importer := TUndImporter.Create(L);
   importer.EnableDebug := false;
-  importer.FuncReadFormat := 'var %k:%t;%k := ' + rudLibName + '.GetL(''%k'');';
-  importer.FuncWriteFormat := crlf + rudLibName + '.SetL(''%k'',%k);';
+  langdef := langint_PascalDWS;
   if isfilter then
   begin // TODO: check if import is working in filter mode
     obj.dws1.Config.Filter := obj.dwsfilter1;
-    importer.FuncReadFormat := '<% ' + importer.FuncReadFormat + ' %>';
-    importer.FuncWriteFormat := '<%' + importer.FuncWriteFormat + '%>';
+    langdef.FuncReadFormat := '<% ' + langdef.FuncReadFormat + ' %>';
+    langdef.FuncWriteFormat := '<%' + langdef.FuncWriteFormat + '%>';
   end;
   script := pchar(lua_tostring(L, 1));
   try
-    script := importer.GetScript(L, script);
+    script := importer.GetScript(L, script, langdef).completescript;
   except
   end; // eats any exception
 

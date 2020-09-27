@@ -13,30 +13,34 @@ uses
   Classes, Lua, pLua, Variants, SysUtils, CatStrings, UndConst;
 
 type
+  TUndCompiledScript = record
+     originalscript:string;
+     constscript:string;
+     initscript:string;
+     endscript:string;
+     completescript:string;
+  end;
+
+type
   TUndImporter = class
   private
     fEnableDebug: boolean;
     fEnableImport: boolean;
-    fInitScript: string;
-    fEndScript: string;
-    fImportNil: boolean;
+    fLangDef: TUndLanguageInternal;
     function CanAddKey(lt: integer; n: string): boolean;
-    function GetLocalsImport(L: Plua_State; LocalFormatStr: string;
-      sl: TStringList): string;
+    function GetLocalsImport(L: Plua_State;sl: TStringList): TUndCompiledScript;
     function GetFormatedImport(const s: string;v:TUndLuaVariable): string;
-    function ImportVariables(L: Plua_State; formatstr: string;
-      ImportGlobals: boolean; ImportLocals: boolean): string;
+    function GetFormatedImports(cs:TUndCompiledScript; v: TUndLuaVariable): TUndCompiledScript;
+    function ImportVariables(L: Plua_State): TUndCompiledScript;
   public
-    FuncReadFormat: string;
-    FuncWriteFormat: string;
     constructor Create(L: Plua_State);
     destructor Destroy; override;
-    function GetScript(L: Plua_State; script: string): string;
+    function GetScript(L: Plua_State; Script: string;
+      const lang:TUndLanguageInternal): TUndCompiledScript;
     procedure Debug(s: string);
     // properties
     property EnableDebug:boolean read fEnableDebug write fEnableDebug;
     property EnableImport:boolean read fEnableImport write fEnableImport;
-    property ImportNil:boolean read fImportNil write fImportNil;
   end;
 
 implementation
@@ -52,7 +56,7 @@ begin
     LUA_TNUMBER:
       result := true;
     LUA_TNIL:
-      if fImportNil then
+      if (uoNoNilImport in fLangDef.Options) = false then
         result := true;
   end;
   // Do not import variables starting with underscore
@@ -71,8 +75,15 @@ begin
   result := replacestr(result, '%c', titlecase(v.LuaTypeStr));
 end;
 
-function TUndImporter.GetLocalsImport(L: Plua_State; LocalFormatStr: string;
-  sl: TStringList): string;
+function TUndImporter.GetFormatedImports(cs:TUndCompiledScript; v: TUndLuaVariable): TUndCompiledScript;
+begin
+ result := cs;
+ result.constscript := result.constscript + GetFormatedImport(fLangDef.FuncConstFormat, v);
+ result.initscript := result.initscript + GetFormatedImport(fLangDef.FuncReadFormat, v);
+ result.endscript := result.endscript + GetFormatedImport(fLangDef.FuncWriteFormat, v);
+end;
+
+function TUndImporter.GetLocalsImport(L: Plua_State;sl: TStringList): TUndCompiledScript;
 var
   v: TUndLuaVariable;
   vname:PAnsiChar;
@@ -93,10 +104,7 @@ var
       if sl.IndexOf(v.name) = -1 then
       begin
         if CanAddKey(v.LuaType, v.name) then
-        begin
-          result := result + GetFormatedImport(LocalFormatStr, v);
-          // result:=result+replacestr(localformatstr,'%k',VarName);
-        end;
+          result := GetFormatedImports(result, v);
         sl.Add(v.name);
       end;
     end;
@@ -117,21 +125,20 @@ begin
   // dbg('getlocimp result:'+result);
 end;
 
-function TUndImporter.ImportVariables(L: Plua_State; formatstr: string;
-  ImportGlobals: boolean; ImportLocals: boolean): string;
+function TUndImporter.ImportVariables(L: Plua_State): TUndCompiledScript;
 var
   sl: TStringList;
   v: TUndLuaVariable;// global-related
   ar: plua_Debug; // local-related
   Index, MaxTable, SubTableMax: integer;
-  r: string;
+  r: TUndCompiledScript;
 begin
   index := -1;
   MaxTable := 0;
   SubTableMax := 1; // -1, 0, 1, works with these params. do not change!
   sl := TStringList.Create;
   // global variables...
-  if ImportGlobals = true then
+  if RudImportGlobals = true then
   begin
     Debug('importing globals...');
     lua_pushvalue(L, LUA_GLOBALSINDEX);
@@ -147,12 +154,7 @@ begin
       if sl.IndexOf(v.name) = -1 then
       begin
         if CanAddKey(v.LuaType, v.name) then
-        begin
-          // dbg('added:'+key);
-          // v.value := Dequote(LuaStackToStr(L, -1, MaxTable, SubTableMax));
-          result := result + GetFormatedImport(FormatStr, v);
-          // result:=result+replacestr(formatstr,'%k',key);
-        end;
+          result := GetFormatedImports(result, v);
         sl.Add(v.name);
       end;
       // debug('found global var:'+key);
@@ -161,20 +163,23 @@ begin
     lua_pop(L, 1);
   end;
 
-  // local variables... is localformatstr is empty, only globals are imported
-  if ImportLocals = true then
+  // local variables...
+  if RudImportLocals = true then
   begin
     if (lua_getstack(L, -2, @ar) = 1) then
     begin
       Debug('importing locals...');
-      r := GetLocalsImport(L, formatstr, sl);
-      if r <> emptystr then
-      begin
-        if ImportGlobals then
-          result := result + r
-        else
-          result := r;
-      end;
+      r := GetLocalsImport(L, sl);
+       if RudImportGlobals = true then begin
+        // merges globals and locals import...
+         result.constscript := result.constscript + r.constscript;
+         result.initscript := result.initscript + r.initscript;
+         result.endscript := result.endscript + r.endscript;
+       end else begin
+         result.constscript := r.constscript;
+         result.initscript := r.initscript;
+         result.endscript := r.endscript;
+       end;
     end;
   end;
 
@@ -187,21 +192,21 @@ begin
     writeln('[dbg] ' + s);
 end;
 
-function TUndImporter.GetScript(L: Plua_State; script: string): string;
+function TUndImporter.GetScript(L: Plua_State; script: string;
+  const lang:TUndLanguageInternal): TUndCompiledScript;
 begin
-  result := script;
+  fLangDef := Lang;
   if fEnableImport = false then
     Exit;
   if RudImportVariables = false then
     Exit;
   Debug('Getting script...');
-  fInitScript := ImportVariables(L, FuncReadFormat, RudImportGlobals,
-    RudImportLocals);
-  Debug('Init:' + fInitScript);
-  fEndScript := ImportVariables(L, FuncWriteFormat, RudImportGlobals,
-    RudImportLocals);
-  Debug('End:' + fEndScript);
-  result := fInitScript + script + fEndScript;
+  result := ImportVariables(L);
+  result.originalscript := script;
+  Debug('Const:' + result.constscript);
+  Debug('Init:' + result.initscript);
+  Debug('End:' + result.endscript);
+  result.completescript := result.InitScript + script + result.EndScript;
   Debug('Done getting script.');
 end;
 
@@ -210,7 +215,7 @@ begin
   inherited Create;
   fEnableImport := true;
   fEnableDebug := false;
-  fImportNil := true;
+  fLangDef.FuncConstFormat := emptystr;
 end;
 
 destructor TUndImporter.Destroy;

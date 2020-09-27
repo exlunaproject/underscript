@@ -24,37 +24,17 @@ function ActiveScript_Run(L: plua_State): integer; cdecl;
 
 implementation
 
-procedure PrepareLanguage(Importer: TUndImporter; Lang: string);
-const
-  debug = ''; // 'Und.WriteLn("reading %k");d=new Date();';
-  debugend = ''; // 'Und.WriteLn("%k loaded as:"+%k);';
+function PrepareLanguage(const Lang: string):TUndLanguageInternal;
 begin
-  // Importer.EnableDebug:=true;
-  Importer.EnableImport := true;
+  result.FuncReadFormat := emptystr;
+  result.FuncWriteFormat := emptystr;
+  result.FuncConstFormat := emptystr;
+
   case TActiveLanguage(GetEnumValue(TypeInfo(TActiveLanguage), Lang)) of
-    JavaScript:
-      begin
-        Importer.FuncReadFormat := debug + '%k = %l.GetL("%k");' + debugend;
-        Importer.FuncWriteFormat := crlf + '%l.SetL("%k",%k);';
-      end;
-    LuaScript:
-      begin
-        Importer.FuncReadFormat := '%k = %l:GetL("%k")' + crlf;
-        Importer.FuncWriteFormat := crlf + '%l:SetL("%k",%k)';
-      end;
-    PerlScript:
-      begin
-        Importer.FuncReadFormat := '$%k = $%l->GetL("%k");';
-        Importer.FuncWriteFormat := crlf + '$%l->SetL("%k",$%k);';
-      end;
-    VBScript:
-      begin
-        Importer.FuncReadFormat := '%k = %l.GetL("%k")' + crlf;
-        Importer.FuncWriteFormat := crlf + '%l.SetL "%k",%k';
-      end;
-  else
-    // language not found, disables import of variables
-    Importer.EnableImport := false;
+    JavaScript: result := langint_JScript;
+    LuaScript: result := langint_LuaScript;
+    PerlScript: result := langint_PerlScript;
+    VBScript: result := langint_VBScript;
   end;
 end;
 
@@ -84,13 +64,18 @@ var
   uconsole: TUndHelper;
   Importer: TUndImporter;
   eh: TScriptErrorHandler;
+  langdef: TUndLanguageInternal;
 begin
   r.success := true;
   CoInitialize(nil);
   eh := TScriptErrorHandler.create;
   Importer := TUndImporter.create(L);
   Importer.EnableDebug := false;
-  PrepareLanguage(Importer, Lang);
+  Importer.EnableImport := true;
+  langdef := PrepareLanguage(Lang);
+  // if language is not found, disables import of variables
+  if langdef.FuncReadFormat = emptystr then
+    Importer.EnableImport := false;
   uconsole := TUndHelper.create;
   uconsole.LuaState := L; // IMPORTANT!
   UndHelper.LuaState := L; // IMPORTANT!
@@ -103,7 +88,7 @@ begin
   obj.asw.UseSafeSubset := false;
   obj.asw.AddNamedItem(rudLibName, uconsole);
   Script := lua_tostring(L, 1);
-  Script := Importer.GetScript(L, Script);
+  Script := Importer.GetScript(L, Script, langdef).completescript;
   Importer.Free;
   try
     if iseval then

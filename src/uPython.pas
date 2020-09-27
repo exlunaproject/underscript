@@ -48,10 +48,8 @@ begin
   obj := TUndPython.Create(L);
   importer := TUndImporter.Create(L);
   importer.EnableDebug:=false;
-  importer.FuncReadFormat := '%k = ' + rudLibName + '.GetL("%k")' + crlf;
-  importer.FuncWriteFormat := crlf + rudLibName + '.SetL("%k",%k)';
   script := lua_tostring(L, 1);
-  script := importer.GetScript(L, script);
+  script := importer.GetScript(L, script, langint_Python).completescript;
   script := 'import ' + rudLibName + crlf + script;
   try
     obj.PyEngine.ExecString(script);

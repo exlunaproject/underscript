@@ -16,25 +16,36 @@ uses
   CatStringLoop, CatUtils, UndConst, UndConsole;
 
 type
+  TUndCompiledScript = record
+     originalscript:string;
+     constscript:string;
+     initscript:string;
+     endscript:string;
+     completescript:string;
+  end;
+
+type
   TUndExternal = class
   private
     fLanguage: TUndLanguageExternal;
     fEnableDebug: boolean;
     fEnableImport: boolean;
     fLuaState: Plua_State;
+    function CanAddKey(lt: integer; n: string): boolean;
     procedure Debug(s: string);
     procedure HandleOutput(L: Plua_State; const s: string);
     procedure HandleOutputAlt(const s: string);
-    function ImportVariables(L: Plua_State; FormatStr: string): string;
+    function ImportVariables(L: Plua_State): TUndCompiledScript;
+    function GetFormatedImports(cs:TUndCompiledScript; v: TUndLuaVariable):
+      TUndCompiledScript;
     function GetFormatedImport(const s: string;v:TUndLuaVariable): string;
-    function GetLocalsImport(L: Plua_State; LocalFormatStr: string;
-      sl: TStringList): string;
+    function GetLocalsImport(L: Plua_State; sl: TStringList): TUndCompiledScript;
     function StringEncode(const s:string):string;
     function StringDecode(const s:string):string;
   public
     constructor Create(L: Plua_State; Lang:TUndLanguageExternal);
     destructor Destroy; override;
-    function GetScript(L: Plua_State; script: string): string;
+    function GetScript(L: Plua_State; script: string): TUndCompiledScript;
     function RunScript(L: Plua_State; script: string): integer;
   end;
 
@@ -51,7 +62,7 @@ begin
   imp.Free;
 end;
 
-function CanAddKey(lt: integer; n: string): boolean;
+function TUndExternal.CanAddKey(lt: integer; n: string): boolean;
 begin
   result := false;
   case lt of
@@ -62,7 +73,8 @@ begin
     LUA_TNUMBER:
       result := true;
     LUA_TNIL:
-      result := true;
+      if (uoNoNilImport in fLanguage.Options) = false then
+        result := true;
   end;
   // Do not import variables starting with underscore
   if beginswith(n, '_') then
@@ -111,8 +123,15 @@ begin
   result := replacestr(result, '%v', v.value);
 end;
 
-function TUndExternal.GetLocalsImport(L: Plua_State; LocalFormatStr: string;
-  sl: TStringList): string;
+function TUndExternal.GetFormatedImports(cs:TUndCompiledScript; v: TUndLuaVariable): TUndCompiledScript;
+begin
+  result := cs;
+  result.constscript := result.constscript + GetFormatedImport(fLanguage.FuncConstFormat, v);
+  result.initscript := result.initscript + GetFormatedImport(fLanguage.FuncReadFormat, v);
+  result.endscript := result.endscript + GetFormatedImport(fLanguage.FuncWriteFormat, v);
+end;
+
+function TUndExternal.GetLocalsImport(L: Plua_State; sl: TStringList): TUndCompiledScript;
 var
   v: TUndLuaVariable;
   vname:PAnsiChar;
@@ -136,8 +155,7 @@ var
         if CanAddKey(v.LuaType, v.name) then
         begin
           v.value := plua_AnyToString(L, -1);
-          result := result + GetFormatedImport(LocalFormatStr, v);
-          // result:=result+replacestr(localformatstr,'%k',VarName);
+          result := GetFormatedImports(result, v);
         end;
         sl.Add(v.name);
       end;
@@ -159,13 +177,13 @@ begin
    //debug('getlocimp result:'+result);
 end;
 
-function TUndExternal.ImportVariables(L: Plua_State; FormatStr: string): string;
+function TUndExternal.ImportVariables(L: Plua_State): TUndCompiledScript;
 var
   sl: TStringList;
   v: TUndLuaVariable;// global-related
   ar: plua_Debug; // local-related
   Index, MaxTable, SubTableMax: integer;
-  r: string;
+  r: TUndCompiledScript;
 begin
   index := -1;
   MaxTable := 0;
@@ -189,11 +207,8 @@ begin
       begin
         if CanAddKey(v.LuaType, v.name) then
         begin
-          // dbg('added:'+key);
-          //v.value := plua_AnyToString(L, -1);
           v.value := plua_dequote(plua_LuaStackToStr(L, -1, MaxTable, SubTableMax));
-          result := result + GetFormatedImport(FormatStr, v);
-          // result:=result+replacestr(formatstr,'%k',key);
+          result := GetFormatedImports(result, v);
         end;
         sl.Add(v.name);
       end;
@@ -203,20 +218,23 @@ begin
     lua_pop(L, 1);
   end;
 
-  // local variables... is localformatstr is empty, only globals are imported
+  // local variables...
   if RudImportLocals = true then
   begin
     if (lua_getstack(L, -2, @ar) = 1) then
     begin
       Debug('importing locals...');
-      r := GetLocalsImport(L, FormatStr, sl);
-      if r <> emptystr then
-      begin
-        if RudImportGlobals then
-          result := result + r
-        else
-          result := r;
-      end;
+      r := GetLocalsImport(L, sl);
+       if RudImportGlobals = true then begin
+        // merges globals and locals import...
+         result.constscript := result.constscript + r.constscript;
+         result.initscript := result.initscript + r.initscript;
+         result.endscript := result.endscript + r.endscript;
+       end else begin
+         result.constscript := r.constscript;
+         result.initscript := r.initscript;
+         result.endscript := r.endscript;
+       end;
     end;
   end;
   sl.free;
@@ -229,21 +247,19 @@ begin
     writeln('[dbg] ' + s);
 end;
 
-function TUndExternal.GetScript(L: Plua_State; script: string): string;
-var
-  InitScript,  EndScript: string;
+function TUndExternal.GetScript(L: Plua_State; script: string) : TUndCompiledScript;
 begin
-  result := script;
   if fEnableImport = false then
     Exit;
   if RudImportVariables = false then
     Exit;
   Debug('Getting script...');
-  InitScript := ImportVariables(L, fLanguage.FuncReadFormat);
-  Debug('Init:' + InitScript);
-  EndScript := ImportVariables(L, fLanguage.FuncWriteFormat);
-  Debug('End:' + EndScript);
-  result := InitScript + crlf + script + crlf + EndScript;
+  result := ImportVariables(L);
+  result.originalscript := script;
+  Debug('Const:' + result.constscript);
+  Debug('Init:' + result.initscript);
+  Debug('End:' + result.endscript);
+  result.completescript := result.InitScript + crlf + script + crlf + result.EndScript;
   Debug('Done getting script.');
 end;
 
@@ -312,7 +328,7 @@ begin
   command := fLanguage.Command;
   command := replacestr(command, '%u', underpath);
   command := replacestr(command, '%p', progdir);
-  script:=(GetScript(L, script));
+  script:=(GetScript(L, script)).completescript;
 
   if pos('%',fLanguage.FormatScript) <> 0 then
   script := replacestr(fLanguage.FormatScript, '%s', script);

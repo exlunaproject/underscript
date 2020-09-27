@@ -38,6 +38,8 @@ type
    end;
 
 function PascalClassic_Run(L: plua_State):integer; cdecl;
+function PascalFunction_Run(L: plua_State):integer; cdecl;
+function PascalFunctionShort_Run(L: plua_State):integer; cdecl;
 
 implementation
 
@@ -55,13 +57,17 @@ uses uPSR_std, uPSC_std,
   UndHelper_REM,
   uPSC_dll, uPSR_dll;
 
+type
+  TPascalMode = (pmFunction, pmFunctionShort, pmProgram);
+
 // Main function for execution of Pascal script
-function PascalClassic_Run(L: plua_State):integer; cdecl;
+function PascalREM_Run(L: plua_State; mode:TPascalMode):integer; cdecl;
 var
   r: TUndScriptResult;
   obj:TUndPascal;
   rv:variant;
   script:string;
+  compscript:TUndCompiledScript;
   importer:TUndImporter;
   procedure HandleError;
   var i: Longint;
@@ -79,24 +85,54 @@ begin
   r.success := true;
   obj := TUndPascal.Create(L);
   importer:=TUndImporter.create(L);
-  //importer.EnableDebug:=true;
-  importer.FuncReadFormat:='%k = '+rudLibName+'.GetL("%k");'+crlf;
-  importer.FuncWriteFormat:=crlf+rudLibName+'.SetL("%k",%k);';
+  undhelper.luastate := L;
+  importer.EnableDebug:= false;
   script:=lua_tostring(L,1);
-  //script:=importer.GetScript(L, script);
+  if mode = pmFunctionShort then begin
+   compscript:=importer.GetScript(L, script, langint_PascalREM);
+   script := compscript.constscript+crlf+'begin'+crlf;
+   script := script+compscript.initscript+compscript.originalscript;
+   script := script+crlf+compscript.endscript+crlf+'end.';
+  end;
+  if mode = pmFunction then begin
+   compscript:=importer.GetScript(L, script, langint_PascalREM);
+   script := compscript.constscript;
+   script := script+crlf+'procedure __import; begin'+crlf+compscript.initscript+crlf+'end;';
+   script := script+crlf+'procedure __run;'+crlf;
+   script := script+compscript.originalscript;
+   script := script+crlf+'begin __import;__run;'+crlf+compscript.endscript+crlf+'end.';
+  end;
+  //writeln(script);
   obj.PSScript.Script.Text:=script;
   if obj.PSScript.Compile then begin
      obj.success:= obj.PSScript.Execute;
      //writeln(booltoyn(obj.Success));
-  end else obj.Success:=false;
+  end else begin
+     obj.Success:=false;
+  end;
 
   if obj.success=false then
-    HandleError;//writeln(obj.errormsg);
-  //OutputMessages;
+    HandleError;
+    //writeln(obj.errormsg);
   obj.free;
   importer.free;
   Und_PushScriptResult(L, r);
   result:=1;
+end;
+
+function PascalClassic_Run(L: plua_State):integer; cdecl;
+begin
+  result := PascalREM_Run(L, pmProgram);
+end;
+
+function PascalFunction_Run(L: plua_State):integer; cdecl;
+begin
+  result := PascalREM_Run(L, pmFunction);
+end;
+
+function PascalFunctionShort_Run(L: plua_State):integer; cdecl;
+begin
+  result := PascalREM_Run(L, pmFunctionShort);
 end;
 
 procedure TUndPascal.CompImport(Sender: TObject; x: TIFPSPascalcompiler);
@@ -175,8 +211,8 @@ begin
   PSScript.OnExecImport:=ExecImport;
   PSScript.OnCompile:=Compile;
   PSScript.OnExecute:=Execute;
-  //PSScript.CompilerOptions:=PSScript.CompilerOptions-[icAllowNoBegin];
-  //PSScript.CompilerOptions:=PSScript.CompilerOptions-[icAllowNoEnd];
+  //PSScript.CompilerOptions:=PSScript.CompilerOptions+[icAllowNoBegin];
+  //PSScript.CompilerOptions:=PSScript.CompilerOptions+[icAllowNoEnd];
   UndHelper.LuaState:=L;
   State:=L;
 end;

@@ -67,7 +67,13 @@ begin
     RegisterMethod('Function GetG( valName : String) : Variant');
     RegisterMethod('Procedure SetG( valName : String; const AValue : Variant)');
     RegisterMethod('Function GetL( valName : String) : Variant');
+    RegisterMethod('Function GetLString( valName : String) : String');
+    RegisterMethod('Function GetLInteger( valName : String) : Integer');
+    RegisterMethod('Function GetLBoolean( valName : String) : Boolean');
     RegisterMethod('Procedure SetL( valName : String; const AValue : Variant)');
+    RegisterMethod('Procedure SetLString( valName : String; const AValue : String)');
+    RegisterMethod('Procedure SetLInteger( valName : String; const AValue : Integer)');
+    RegisterMethod('Procedure SetLBoolean( valName : String; const AValue : Boolean)');
   end;
 end;
 
@@ -98,7 +104,13 @@ begin
     RegisterMethod(@TUndHelper.WriteLn, 'WriteLn');
     RegisterMethod(@TUndHelper.Run, 'Run');
     RegisterMethod(@TUndHelper.GetL, 'GetL');
+    RegisterMethod(@TUndHelper.GetLString, 'GetLString');
+    RegisterMethod(@TUndHelper.GetLInteger, 'GetLInteger');
+    RegisterMethod(@TUndHelper.GetLBoolean, 'GetLBoolean');
     RegisterMethod(@TUndHelper.SetL, 'SetL');
+    RegisterMethod(@TUndHelper.SetLString, 'SetLString');
+    RegisterMethod(@TUndHelper.SetLInteger, 'SetLInteger');
+    RegisterMethod(@TUndHelper.SetLBoolean, 'SetLBoolean');
     RegisterMethod(@TUndHelper.GetG, 'GetG');
     RegisterMethod(@TUndHelper.SetG, 'SetG');
   end;

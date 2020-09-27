@@ -176,7 +176,7 @@ function lua_run32_luav51(L: plua_State):integer; cdecl;
 var lang:TUndLanguageExternal;
 begin
   lang := langdef_Lua;
-  lang.Command:='%u32\lua5.1.exe';
+  lang.Command:='%u32\lua51\lua5.1.exe';
   if plua_validateargs(L, result, [LUA_TSTRING]).OK then
     RunExternalScript(L, lua_tostring(L,1), lang);
 end;

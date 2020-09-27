@@ -46,11 +46,8 @@ begin
   UndHelper.LuaState := L;
   importer := TUndImporter.Create(L);
   importer.EnableDebug:=false;
-  importer.ImportNil := false;
-  importer.FuncReadFormat := '%k = ' + rudLibName + '.GetL%c("%k");';
-  importer.FuncWriteFormat := crlf + rudLibName + '.SetL%c("%k",%k);';
   script := lua_tostring(L, 1);
-  script := importer.GetScript(L, script);
+  script := importer.GetScript(L, script, langint_JSSpiderMonkey).completescript;
   try
     eng.Evaluate(script);
   except

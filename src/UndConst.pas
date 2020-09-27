@@ -48,8 +48,16 @@ type
 
 type
   TUndStringEncodeFormat = (usfBase64, usfHex);
-  TUndOptions = (uoTimeout);
+  TUndOptions = (uoTimeout, uoNoNilImport);
   TUndOptionSet = set of TUndOptions;
+
+type
+  TUndLanguageInternal = record
+   FuncConstFormat: string;
+   FuncReadFormat: string;
+   FuncWriteFormat: string;
+   Options: TUndOptionSet;
+  end;
 
 type
   TUndLanguageExternal = record
@@ -58,6 +66,7 @@ type
    FileExt: string;
    StringFormat: string;
    VarReadFormat: string;
+   FuncConstFormat: string;
    FuncReadFormat: string;
    FuncWriteFormat: string;
    StringEncoder: string;
@@ -79,7 +88,7 @@ const
    FuncWriteFormat: ' print("%pt=%t,n=%k,v="..%g);';
    StringEncoder: 'string.tohex(%s)';
    StringDecoder: 'string.fromhex(%s)';
-   FormatScript: cLuaHexEncodeDecodeFuncs+'%s';
+   FormatScript: cLuaHexEncodeDecodeFuncs+' %s';
    NilKeyword: 'nil';
    StringEncodeFormat: usfHex;
  );
@@ -109,9 +118,10 @@ const
    StringEncoder: 'Base64.strict_encode64(%s)';
    StringDecoder: 'Base64.strict_decode64(%s)';
    FormatScript: 'require "base64"; %s';
-   NilKeyword: '""';
+   NilKeyword: 'nil';
+   Options: [uoNoNilImport];
  );
- // FIXME: nil in NilKeyword generating conversion error for Ruby
+ // Disabled because it is generating import conversion error for Ruby
 
 const
  langdef_Perl: TUndLanguageExternal = (
@@ -245,6 +255,64 @@ const
    StringDecoder: '(new String(Base64.getDecoder().decode(%s)))';
    FormatScript: '%s';
    NilKeyword: 'null';
+ );
+
+// Built-in Interpreters
+
+const
+ langint_JScript:TUndLanguageInternal = (
+   FuncReadFormat: '%k = %l.GetL("%k");';
+   FuncWriteFormat: crlf + '%l.SetL("%k",%k);';
+ );
+const
+ langint_LuaScript:TUndLanguageInternal = (
+   FuncReadFormat: ' %k = %l:GetL("%k") ';
+   FuncWriteFormat: ' %l:SetL("%k",%k) ';
+ );
+const
+ langint_PerlScript:TUndLanguageInternal = (
+   FuncReadFormat: '$%k = $%l->GetL("%k");';
+   FuncWriteFormat: crlf + '$%l->SetL("%k",$%k);';
+ );
+const
+ langint_VBScript:TUndLanguageInternal = (
+   FuncReadFormat: '%k = %l.GetL("%k")' + crlf;
+   FuncWriteFormat:  crlf + '%l.SetL "%k",%k';
+ );
+const
+ langint_PascalDWS:TUndLanguageInternal = (
+   FuncReadFormat: 'var %k:%t;%k := %l.GetL(''%k'');';
+   FuncWriteFormat: crlf + '%l.SetL(''%k'',%k);';
+ );
+const
+ langint_PascalREM:TUndLanguageInternal = (
+   FuncConstFormat: 'var %k:%t;';
+   FuncReadFormat: '%k := %l.GetL%c(''%k'');'+crlf;
+   FuncWriteFormat: crlf+'%l.SetL%c(''%k'',%k);';
+   Options: [uoNoNilImport];
+ );
+const
+ langint_Python:TUndLanguageInternal = (
+   FuncReadFormat: '%k = %l.GetL("%k")' + crlf;
+   FuncWriteFormat: crlf + '%l.SetL("%k",%k)';
+ );
+const
+ langint_JSSpiderMonkey:TUndLanguageInternal = (
+   FuncReadFormat: '%k = %l.GetL%c("%k");';
+   FuncWriteFormat: crlf + '%l.SetL%c("%k",%k);';
+   Options: [uoNoNilImport];
+ );
+const
+ langint_JSQuick:TUndLanguageInternal = (
+   FuncReadFormat : 'var %k = %l.GetL%c("%k");';
+   FuncWriteFormat : crlf + '%l.SetL%c("%k",%k);';
+   Options: [uoNoNilImport];
+ );
+const
+ langint_JavaScriptCore:TUndLanguageInternal = (
+   FuncReadFormat : '%k = %l.GetL%c("%k");';
+   FuncWriteFormat : crlf + '%l.SetL%c("%k",%k);';
+   Options: [uoNoNilImport];
  );
 
 procedure uConsoleWriteError(line: integer; msg: String);

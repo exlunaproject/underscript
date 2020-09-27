@@ -13,6 +13,16 @@ library Underscript;
 
 {$I Underscript.inc}
 {$I CatCompactLib.inc}
+{$DEFINE UNDER_ACTIVESCRIPT}
+{$DEFINE UNDER_PASCAL}
+{$DEFINE UNDER_PASCAL_CLASSIC}
+{$DEFINE UNDER_JAVASCRIPTCORE}
+{$DEFINE UNDER_JAVASCRIPT_QUICKJS}
+{$DEFINE UNDER_JAVASCRIPT_SPIDERMONKEY}
+{$DEFINE UNDER_PHP}
+{$DEFINE UNDER_PYTHON_ENV}
+{$DEFINE UNDER_RUBY}
+{$DEFINE UNDER_LEGACY}
 
 uses
   SysUtils, TypInfo, Lua, pLua, pLuaTable, CatCSCommand, UndConst, UndScriptExt,
@@ -170,11 +180,13 @@ end;
 
 function lua_getpascalscriptfunc(L: plua_State):integer; cdecl;
 const
-   table : array [1..4] of luaL_Reg =
+   table : array [1..6] of luaL_Reg =
    (
    (name:'page';func:PascalWebScript_Run),
    (name:'dws';func:PascalScript_Run),
    (name:'prog';func:PascalClassic_Run),
+   (name:'func';func:PascalFunction_Run),
+   (name:'short';func:PascalFunctionShort_Run),
    (name:nil;func:nil)
    );
 begin
