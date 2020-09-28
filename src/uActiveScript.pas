@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, lua, plua, LuaObject, ActiveX, CatJSRunnerAS, UndHelper_AS,
-  CatStrings, UndImporter, UndConst, UndConsole, TypInfo;
+  CatStrings, UndImporter, UndConst, UndConsole, TypInfo, CatTime;
 
 const
   cDefaultLanguage: string = 'JavaScript';
@@ -65,7 +65,11 @@ var
   Importer: TUndImporter;
   eh: TScriptErrorHandler;
   langdef: TUndLanguageInternal;
+  sw: TCatStopWatch;
 begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
+    Exit;
+  sw := CatStopWatchNew;
   r.success := true;
   CoInitialize(nil);
   eh := TScriptErrorHandler.create;
@@ -111,7 +115,7 @@ begin
   obj.Free;
   eh.Free;
   CoUninitialize;
-  Und_PushScriptResult(L, r);
+  Und_PushScriptResult(L, r, sw);
   result := 1;
 end;
 

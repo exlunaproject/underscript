@@ -36,6 +36,7 @@ type
    success:boolean;
    errormessage:string;
    expressionresult:string;
+   elapsedtime:string;
   end;
 
 type
@@ -189,7 +190,7 @@ const
    StringFormat: '"%s"';
    VarReadFormat: '%k';
    FuncReadFormat: '%k = %v;';
-   FuncWriteFormat: ';print("\n%pt=%t,n=%k,v="+%g);';
+   FuncWriteFormat: ';print("%pt=%t,n=%k,v="+%g);';
    StringEncoder: 'str2hex(%s)';
    StringDecoder: 'hex2str(%s)';
    FormatScript: cJsHexEncodeDecodeFuncs+' %s';
@@ -199,7 +200,7 @@ const
 
 const
  langdef_QuickJS: TUndLanguageExternal = (
-   Command: '%u\multipreter\multipreter.exe';
+   Command: '%p\multipreter.exe';
    Params: 'quickjs %f';
    FileExt: '.js';
    StringFormat: '"%s"';

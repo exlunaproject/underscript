@@ -15,7 +15,7 @@ uses
 {$ELSE}
   Classes, SysUtils, Forms,
 {$ENDIF}
-  Lua, pLua, LuaObject, CatStrings, UndHelper_Obj, UndConsole,
+  Lua, pLua, LuaObject, CatStrings, UndHelper_Obj, UndConsole, CatTime,
   Dws2Comp, dws2Exprs, dws2Compiler, dws2htmlfilter, UndImporter, UndConst;
 
 type
@@ -51,9 +51,11 @@ var
   importer: TUndImporter;
   i: integer;
   langdef: TUndLanguageInternal;
+  sw: TCatStopWatch;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
     Exit;
+  sw := CatStopWatchNew;
   r.success := true;
   obj := TUndDWS.Create(L);
   importer := TUndImporter.Create(L);
@@ -95,7 +97,7 @@ begin
 
   obj.Free;
   importer.Free;
-  Und_PushScriptResult(L, r);
+  Und_PushScriptResult(L, r, sw);
   Result := 1;
 end;
 

@@ -9,23 +9,25 @@ unit UndConsole;
 interface
 
 uses
-  SysUtils, Lua, pLua, pLuaTable, CatStrings, CatUtils, UndConst;
+  SysUtils, Lua, pLua, pLuaTable, CatStrings, CatUtils, UndConst, CatTime;
 
 procedure uConsoleDebug(L: plua_State; s: String);
 procedure uConsoleErrorLn(L: plua_State; line: integer; msg: String);
 procedure uConsoleWrite(L: plua_State; s: String);
 procedure uConsoleWriteLn(L: plua_State; s: String);
-procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult);
+procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult; sw:TCatStopWatch);
 
 
 implementation
 
-procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult);
+procedure Und_PushScriptResult(L: plua_State; res:TUndScriptResult; sw:TCatStopWatch);
 begin
+ res.elapsedtime := GetStopWatchElapsedTime(sw).MsAsString;
  lua_newtable(L);
  plua_SetFieldValue(L, 'success', res.success);
  plua_SetFieldValue(L, 'errormsg', res.ErrorMessage);
  plua_SetFieldValue(L, 'expresult', res.expressionresult);
+ plua_SetFieldValue(L, 'elapsedtime', res.elapsedtime);
 end;
 
 procedure uConsoleDebug(L: plua_State; s: String);

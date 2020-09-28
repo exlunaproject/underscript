@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, lua, plua, LuaObject, UndImporter, UndConsole, UndConst,
-  CatStrings, js15decl,jsintf, UndHelper_Obj, vcl.dialogs;
+  CatStrings, js15decl,jsintf, UndHelper_Obj, vcl.dialogs, CatTime;
 
 type
   [JSClassName('UConsole')]
@@ -35,9 +35,11 @@ var
   r: TUndScriptResult;
   script: string;
   importer: TUndImporter;
+  sw: TCatStopWatch;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
     Exit;
+  sw := CatStopWatchNew;
   r.success := true;
   eng := TJSEngine.Create;
   eng.registerGlobalFunctions(TJSGlobalFunctions);
@@ -57,10 +59,10 @@ begin
       uConsoleErrorLn(L, -1, 'JS: ' + E.Message);
     end;
   end;
-
   importer.free;
   eng.Free;
-  Und_PushScriptResult(L, r);
+  r.elapsedtime := GetStopWatchElapsedTime(sw).MsAsString;
+  Und_PushScriptResult(L, r, sw);
   result := 1;
 end;
 

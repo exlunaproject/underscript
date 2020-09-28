@@ -105,7 +105,7 @@ uses
   JSK.Base in 'thirdparty\js_javascriptcore\JSK.Base.pas',
   JSK.API in 'thirdparty\js_javascriptcore\JSK.API.pas',
   {$ENDIF}
-  CatStrings;
+  CatTime, CatStrings;
 
 
 {$R *.res}
@@ -115,8 +115,10 @@ var
   r: TUndScriptResult;
   script:string;
   error: integer;
+  sw: TCatStopWatch;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK then begin
+   sw := CatStopWatchNew;
    r.success := true;
    script := lua_tostring(L,1);
    luaL_loadbuffer(L, pAnsiChar(ansistring(script)), Length(ansistring(script)), pAnsiChar(''));
@@ -127,13 +129,13 @@ begin
     lua_pop(L, 1);
     uConsoleErrorLn(L, 0, r.errormessage);
    end;
-   Und_PushScriptResult(L, r);
+   Und_PushScriptResult(L, r, sw);
   end;
 end;
 
 function lua_getjavascriptfunc(L: plua_State):integer; cdecl;
 const
-   table : array [1..9] of luaL_Reg =
+   table : array [1..8] of luaL_Reg =
    (
    (name:'jscript';func:JavaScript_Run),
    (name:'core';func:JavaScriptJSC_Run),
@@ -141,8 +143,18 @@ const
    (name:'nodestrict';func:lua_run_nodejs_strict),
    (name:'quick';func:JavaScriptQuick_Run),
    (name:'spider';func:JavaScriptSM_Run),
-   (name:'tiscript';func:lua_run_tiscript),
    (name:'v8';func:lua_run_jsv8),
+   (name:nil;func:nil)
+   );
+begin
+   result := plua_pushcfunction_fromarray(L, lua_tostring(L,2), table);
+end;
+
+function lua_getjavascriptppfunc(L: plua_State):integer; cdecl;
+const
+   table : array [1..2] of luaL_Reg =
+   (
+   (name:'tiscript';func:lua_run_tiscript),
    (name:nil;func:nil)
    );
 begin
@@ -304,6 +316,7 @@ begin
   plua_SetFieldValue(L, 'alpha', @lua_getalphascriptfunc, nil);
   plua_SetFieldValue(L, 'javax', @lua_getjavafunc, nil);
   plua_SetFieldValue(L, 'js', @lua_getjavascriptfunc, nil);
+  plua_SetFieldValue(L, 'jspp', @lua_getjavascriptppfunc, nil);
   plua_SetFieldValue(L, 'lua', @lua_getluascriptfunc, nil);
   plua_SetFieldValue(L, 'pascal', @lua_getpascalscriptfunc, nil);
   Result := 0;

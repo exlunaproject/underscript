@@ -17,7 +17,7 @@ uses
   Classes, SysUtils, Forms,
 {$ENDIF}
   lua, plua, LuaObject, uPSCompiler, uPSRuntime, CatStrings, UndConsole,
-  UndHelper_Obj, uPSComponent, UndImporter, UndConst;
+  UndHelper_Obj, uPSComponent, UndImporter, UndConst, CatTime;
 
 type
    TUndPascal = class
@@ -69,6 +69,7 @@ var
   script:string;
   compscript:TUndCompiledScript;
   importer:TUndImporter;
+  sw: TCatStopWatch;
   procedure HandleError;
   var i: Longint;
   begin
@@ -82,6 +83,7 @@ var
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
     Exit;
+  sw := CatStopWatchNew;
   r.success := true;
   obj := TUndPascal.Create(L);
   importer:=TUndImporter.create(L);
@@ -116,7 +118,7 @@ begin
     //writeln(obj.errormsg);
   obj.free;
   importer.free;
-  Und_PushScriptResult(L, r);
+  Und_PushScriptResult(L, r, sw);
   result:=1;
 end;
 

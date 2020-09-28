@@ -13,7 +13,7 @@ interface
 
 uses
   Classes, Lua, pLua, Variants, SysUtils, CatStrings, CatCSCommand, CatFiles,
-  CatStringLoop, CatUtils, UndConst, UndConsole;
+  CatStringLoop, CatUtils, UndConst, UndConsole, CatTime;
 
 type
   TUndCompiledScript = record
@@ -315,7 +315,9 @@ var
   fn, progdir, underpath, command, params: string;
   sl: TStringList;
   timeout: integer;
+  sw: TCatStopWatch;
 begin
+  sw := CatStopWatchNew;
   result := 1;
   timeout := 0;
   if uoTimeout in fLanguage.Options then
@@ -337,7 +339,6 @@ begin
   params := fn;
   if pos('%',fLanguage.Params) <> 0 then
   params := replacestr(fLanguage.Params, '%f', fn);
-
 
   sl := TStringList.Create;
   sl.Text := script;
@@ -361,11 +362,12 @@ begin
   end else begin
     r.success := false;
     r.errormessage := command+' not available in path.';
-    uConsoleErrorLn(L, -1, r.errormessage);
+    //uConsoleErrorLn(L, -1, r.errormessage);
+    luaL_error(L, PAnsiChar(AnsiString(r.errormessage)));
   end;
   sl.free;
   deletefile(fn);
-  Und_PushScriptResult(L, r);
+  Und_PushScriptResult(L, r, sw);
 end;
 
 constructor TUndExternal.Create(L: Plua_State; Lang:TUndLanguageExternal);

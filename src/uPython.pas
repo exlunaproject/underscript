@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, lua, plua, LuaObject, PythonEngine, UndHelper_AS,
-  UndImporter, VarPyth, UndConst, UndConsole;
+  UndImporter, VarPyth, UndConst, UndConsole, CatTime;
 
 const
   cObjectName = 'RPython';
@@ -41,9 +41,11 @@ var
   //rv: Variant;
   script: string;
   importer: TUndImporter;
+  sw: TCatStopWatch;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
     Exit;
+  sw := CatStopWatchNew;
   r.success := true;
   obj := TUndPython.Create(L);
   importer := TUndImporter.Create(L);
@@ -67,7 +69,7 @@ begin
 
   obj.free;
   importer.free;
-  Und_PushScriptResult(L, r);
+  Und_PushScriptResult(L, r, sw);
   result := 1;
 end;
 

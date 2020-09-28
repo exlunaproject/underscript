@@ -24,14 +24,7 @@ uses
  {$ENDIF}
  CatCLUtils;
 
- // Reduces exe size
-const IMAGE_FILE_RELOCS_STRIPPED = $0001; {Relocation info stripd}
-{$IFDEF RELEASE}
-{$WEAKLINKRTTI ON}
-{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
-{$ENDIF}
- {$O+} {$SetPEFlags IMAGE_FILE_RELOCS_STRIPPED}
- // Reduces exe size end
+{$I CatCompactBin.inc}
 {$R *.res}
 
 var

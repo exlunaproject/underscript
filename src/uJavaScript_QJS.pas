@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, Windows, lua, plua, LuaObject, UndImporter, UndConst, CatStrings,
-  quickjs, UndHelper_QJS, UndHelper_Obj, UndConsole;
+  quickjs, UndHelper_QJS, UndHelper_Obj, UndConsole, CatTime;
 
 function JavaScriptQuick_Run(L: Plua_State): integer; cdecl;
 
@@ -124,11 +124,13 @@ var
   r: TUndScriptResult;
   script: string;
   importer: TUndImporter;
+  sw: TCatStopWatch;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
     Exit;
   r.success := true;
   undhelper.LuaState := L;
+  sw := CatStopWatchNew;
 
   importer := TUndImporter.Create(L);
   importer.EnableDebug:=false;
@@ -145,7 +147,7 @@ begin
   end;
 
   importer.free;
-  Und_PushScriptResult(L, r);
+  Und_PushScriptResult(L, r, sw);
   result := 1;
 end;
 
