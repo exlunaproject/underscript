@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, lua, plua, LuaObject, UndImporter, UndConsole, UndConst,
-  CatStrings, js15decl,jsintf, UndHelper_Obj, vcl.dialogs, CatTime;
+  CatStrings, js15decl,jsintf, UndHelper_Obj, vcl.dialogs, CatLogger;
 
 type
   [JSClassName('UConsole')]

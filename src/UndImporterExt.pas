@@ -13,7 +13,7 @@ interface
 
 uses
   Classes, Lua, pLua, Variants, SysUtils, CatStrings, CatCSCommand, CatFiles,
-  CatStringLoop, CatUtils, UndConst, UndConsole, CatTime;
+  CatStringLoop, CatUtils, UndConst, UndConsole, CatLogger;
 
 type
   TUndCompiledScript = record
@@ -30,6 +30,7 @@ type
     fLanguage: TUndLanguageExternal;
     fEnableDebug: boolean;
     fEnableImport: boolean;
+    fSilent: boolean;
     fLuaState: Plua_State;
     function CanAddKey(lt: integer; n: string): boolean;
     procedure Debug(s: string);
@@ -47,6 +48,7 @@ type
     destructor Destroy; override;
     function GetScript(L: Plua_State; script: string): TUndCompiledScript;
     function RunScript(L: Plua_State; script: string): integer;
+    procedure SetTag(const i:integer);
   end;
 
 function RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal):integer;
@@ -56,10 +58,19 @@ implementation
 function RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal):integer;
 var
   imp:TUndExternal;
+  tag:integer;
 begin
+  tag := lua_tointeger(L, lua_upvalueindex(1));
   imp := TUndExternal.Create(L, Lang);
+  imp.SetTag(tag);
   result := imp.RunScript(L, s);
   imp.Free;
+end;
+
+procedure TUndExternal.SetTag(const i:integer);
+begin
+  if i = cUndTag_Quiet then
+    fSilent := true;
 end;
 
 function TUndExternal.CanAddKey(lt: integer; n: string): boolean;
@@ -296,6 +307,7 @@ begin
 
        // if rudCustomFunc_WriteLn <> emptystr then begin
         //outdebug('writeln:'+slp.Current);
+        if fSilent = false then
         uConsoleWriteLn(L,slp.Current);
     end;
   end;
@@ -375,6 +387,7 @@ begin
   inherited Create;
   fEnableImport := true;
   fEnableDebug := false;
+  fSilent := false;
   fLuaState := L;
   fLanguage := Lang;
 end;

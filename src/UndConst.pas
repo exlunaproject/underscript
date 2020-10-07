@@ -9,7 +9,7 @@ unit UndConst;
 interface
 
 uses
-  SysUtils, CatStrings, CatUtils;
+  SysUtils, CatStrings, CatUtils, Lua, pLuaTable;
 
 const
   // Important: this constant must be have the first letter uppercase because of Ruby compatibility
@@ -22,6 +22,10 @@ const
   cJSHexDecodeFunc = 'function hex2str(h) { var s = ""; for (var i = 0; i < h.length; i += 2) s += String.fromCharCode(parseInt(h.substr(i, 2), 16)); return s; }';
   cJSHexEncodeFunc = 'function str2hex(s) { var h = ""; for(var i=0;i<s.length;i++) { h += ""+s.charCodeAt(i).toString(16); } return h; }';
   cJsHexEncodeDecodeFuncs = cJSHexDecodeFunc + cJSHexEncodeFunc;
+
+const
+  cUndTag_Normal = 1;
+  cUndTag_Quiet = 2;
 
 var
   rudLibName: string = cUnd;
@@ -113,7 +117,7 @@ const
    Command: '%u\ruby\ruby.exe';
    FileExt: '.rb';
    StringFormat: '"%s"';
-   VarReadFormat: '%k';
+   VarReadFormat: '%k.to_s';
    FuncReadFormat: '%k = %v;';
    FuncWriteFormat: ';puts "%pt=%t,n=%k,v="+%g;';
    StringEncoder: 'Base64.strict_encode64(%s)';
@@ -207,6 +211,22 @@ const
    VarReadFormat: '%k';
    FuncReadFormat: 'var %k = %v;';
    FuncWriteFormat: ';console.log("\n%pt=%t,n=%k,v="+%g);';
+   StringEncoder: 'str2hex(%s)';
+   StringDecoder: 'hex2str(%s)';
+   FormatScript: cJsHexEncodeDecodeFuncs+' %s';
+   NilKeyword: 'null';
+   StringEncodeFormat: usfHex;
+ );
+
+const
+ langdef_JavaScriptCore: TUndLanguageExternal = (
+   Command: '%p\multipreter.exe';
+   Params: 'javascriptcore %f';
+   FileExt: '.js';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: 'var %k = %v;';
+   FuncWriteFormat: ';UConsole.WriteLn("%pt=%t,n=%k,v="+%g);';
    StringEncoder: 'str2hex(%s)';
    StringDecoder: 'hex2str(%s)';
    FormatScript: cJsHexEncodeDecodeFuncs+' %s';
@@ -318,6 +338,9 @@ const
 
 procedure uConsoleWriteError(line: integer; msg: String);
 procedure SetCustomModuleName(name:string);
+procedure ReadScriptSettings(L: Plua_State);
+function RegisterScriptEngine(L: Plua_State; const LanguageTable, EngineName:string;
+  Func:lua_CFunction):integer; cdecl;
 
 
 implementation
@@ -325,6 +348,43 @@ implementation
 procedure uConsoleWriteError(line: integer; msg: String);
 begin
   system.WriteLn('--('+inttostr(line)+'): '+msg);
+end;
+
+procedure ReadScriptSettings(L: Plua_State);
+var idx:integer;
+begin
+  lua_getglobal(L, 'tostring');
+  lua_pushstring(L, '_script');
+  lua_rawget(L, LUA_GLOBALSINDEX);
+  idx := lua_gettop(L);
+  lua_pushstring(L, 'options');
+  lua_rawget(L, idx);
+  idx := lua_gettop(L);
+  rudLibName := plua_GetFieldValueStr(L, idx, 'modulename', rudLibName);
+  rudImportVariables := plua_GetFieldValueBool(L, idx, 'usevars', rudImportVariables);
+  rudImportGlobals := plua_GetFieldValueBool(L, idx, 'useglobals', rudImportGlobals);
+  rudImportLocals := plua_GetFieldValueBool(L, idx, 'uselocals', rudImportLocals);
+  rudRedirectIO := plua_GetFieldValueBool(L, idx, 'redirectio', rudRedirectIO);
+end;
+
+function RegisterScriptEngine(L: Plua_State; const LanguageTable, EngineName:string;
+  Func:lua_CFunction):integer; cdecl;
+var
+  idx:integer;
+begin
+  result := 0;
+  lua_getglobal(L, 'tostring');
+  lua_pushstring(L, '_script');
+  lua_rawget(L, LUA_GLOBALSINDEX);
+  idx := lua_gettop(L);
+  if lua_istable(L, lua_gettop(L)) then begin
+   lua_pushstring(L, LanguageTable);
+   lua_rawget(L, idx);
+   idx := lua_gettop(L);
+   lua_pushstring(L, EngineName);
+   lua_pushcfunction(L, Func);
+   lua_rawset(L, idx);
+  end;
 end;
 
 procedure SetCustomModuleName(name:string);

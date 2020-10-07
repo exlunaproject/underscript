@@ -9,7 +9,7 @@ unit UndConsole;
 interface
 
 uses
-  SysUtils, Lua, pLua, pLuaTable, CatStrings, CatUtils, UndConst, CatTime;
+  SysUtils, Lua, pLua, pLuaTable, CatStrings, CatUtils, UndConst, CatLogger;
 
 procedure uConsoleDebug(L: plua_State; s: String);
 procedure uConsoleErrorLn(L: plua_State; line: integer; msg: String);

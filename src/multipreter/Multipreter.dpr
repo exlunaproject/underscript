@@ -7,7 +7,7 @@ program Multipreter;
 }
 
 {$APPTYPE CONSOLE}
-
+{$DEFINE UNDER_JAVASCRIPTCORE}
 
 uses
  Classes, SysUtils,
@@ -20,6 +20,11 @@ uses
  quickjs in '..\thirdparty\js_quickjs\quickjs.pas',
  uJavaScript_SM,
  uJavaScript_Quick,
+  {$IFDEF UNDER_JAVASCRIPTCORE}
+  uJavaScript_JSC,  
+  JSK.Base in '..\thirdparty\js_javascriptcore\JSK.Base.pas',
+  JSK.API in '..\thirdparty\js_javascriptcore\JSK.API.pas',
+  {$ENDIF} 
  {$ELSE}
  {$ENDIF}
  CatCLUtils;
@@ -41,6 +46,8 @@ begin
     sl.LoadFromFile(scriptfilename);
     script := sl.Text;
     sl.Free;
+    if paramstr(1) = 'javascriptcore' then
+      JavaScriptJSC_Run(script) else
     if paramstr(1) = 'spidermonkey' then
       JavaScriptSM_Run(script) else
     if paramstr(1) = 'quickjs' then

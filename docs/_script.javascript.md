@@ -2,10 +2,10 @@
 
 You can run JS code through the following methods:
 
-* _script.**javascript** - default JS engine
+* _script.**javascript** - default JS engine (QuickJS engine)
 * _script.**jscript** - MS JavaScript engine
 * _script.js.**core** - Apple's JavaScriptCore engine
-* _script.js.**node** or **jsnodestrict** - Node.JS
+* _script.js.**node** or **nodestrict** - Node.JS
 * _script.js.**quick** - QuickJS engine
 * _script.js.**spider** - SpiderMonkey engine
 * _script.js.**v8** - Pure V8 engine

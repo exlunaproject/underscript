@@ -39,12 +39,12 @@ end;
 
 procedure TUndHelper.Write(s: String);
 begin
-  Write(s);
+  System.Write(s);
 end;
 
-procedure TUndHelper.writeln(s: String);
+procedure TUndHelper.WriteLn(s: String);
 begin
-  WriteLn(s);
+  System.WriteLn(s);
 end;
 
 initialization

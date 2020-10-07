@@ -17,7 +17,7 @@ uses
   Classes, SysUtils, Forms,
 {$ENDIF}
   lua, plua, LuaObject, uPSCompiler, uPSRuntime, CatStrings, UndConsole,
-  UndHelper_Obj, uPSComponent, UndImporter, UndConst, CatTime;
+  UndHelper_Obj, uPSComponent, UndImporter, UndConst, CatLogger;
 
 type
    TUndPascal = class

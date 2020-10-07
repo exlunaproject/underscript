@@ -9,7 +9,7 @@ unit UndScriptExt;
 interface
 
 uses
-  Classes, Lua, pLua, UndConst, UndImporterExt, CatUtils;
+  Classes, SysUtils, Lua, pLua, UndConst, UndImporterExt, CatUtils;
 
 function lua_run_luajit(L: plua_State):integer; cdecl;
 function lua_run_luav51(L: plua_State):integer; cdecl;
@@ -22,6 +22,7 @@ function lua_run_java(L: plua_State):integer; cdecl;
 function lua_run_javabshcore(L: plua_State):integer; cdecl;
 function lua_run_jsv8(L: plua_State):integer; cdecl;
 function lua_run_jsspidermonkey(L: plua_State):integer; cdecl;
+function lua_run_js_javascriptcore(L: plua_State):integer; cdecl;
 function lua_run_quickjs(L: plua_State):integer; cdecl;
 function lua_run_php(L: plua_State):integer; cdecl;
 function lua_run_ruby(L: plua_State):integer; cdecl;
@@ -103,8 +104,12 @@ end;
 
 function lua_run_java(L: plua_State):integer; cdecl;
 begin
+ // if bsh is not available, try bsh-core
+ if fileexists(extractfilepath(paramstr(0))+'\Extensions\underscript\beanshell\bsh.exe') then begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK then
     RunExternalScript(L, lua_tostring(L,1), langdef_Java);
+ end else
+ result := lua_run_javabshcore(L);
 end;
 
 function lua_run_javabshcore(L: plua_State):integer; cdecl;
@@ -120,10 +125,16 @@ function lua_run_jsspidermonkey(L: plua_State):integer; cdecl;
 var lang:TUndLanguageExternal;
 begin
   lang := langdef_V8JS;
-  lang.Command := '%u\multipreter\multipreter.exe';
+  lang.Command := '%p\multipreter.exe';
   lang.Params := 'spidermonkey %f';
   if plua_validateargs(L, result, [LUA_TSTRING]).OK then
     RunExternalScript(L, lua_tostring(L,1), lang);
+end;
+
+function lua_run_js_javascriptcore(L: plua_State):integer; cdecl;
+begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), langdef_JavaScriptCore);
 end;
 
 function lua_run_quickjs(L: plua_State):integer; cdecl;

@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, Windows, lua, plua, LuaObject, UndImporter, UndConst, CatStrings,
-  quickjs, UndHelper_QJS, UndHelper_Obj, UndConsole, CatTime;
+  quickjs, UndHelper_QJS, UndHelper_Obj, UndConsole, CatLogger;
 
 function JavaScriptQuick_Run(L: Plua_State): integer; cdecl;
 
@@ -58,6 +58,25 @@ begin
   Result := eval_buf(ctx, script, length(script), '_script.js', eval_flags);
 end;
 
+function printme(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl;
+var
+  i , argcount: Integer;
+  str : PAnsiChar;
+begin
+  for i := 0 to Pred(argc) do
+  begin
+     if i <> 0 then
+       uConsoleWrite(undhelper.LuaState, ' ');
+     str := JS_ToCString(ctx, argv[i]);
+     if not Assigned(str) then
+        exit(JS_EXCEPTION);
+     uConsoleWrite(undhelper.LuaState, str);
+     JS_FreeCString(ctx, str);
+  end;
+  uConsoleWriteln(undhelper.LuaState, '');
+  Result := JS_UNDEFINED;
+end;
+
 procedure RunCode(script:string);
 var
   rt  : JSRuntime;
@@ -104,6 +123,8 @@ begin
       eval_buf(ctx, std_hepler, {$IFDEF FPC}strlen{$ELSE}lstrlenA{$ENDIF}(std_hepler), '<global_helper>', JS_EVAL_TYPE_MODULE);
 
       global := JS_GetGlobalObject(ctx);
+      // Define a function in the global context.
+      JS_SetPropertyStr(ctx,global,'print',JS_NewCFunction(ctx, @printme, 'print', 1));
       JS_FreeValue(ctx, global);
 
       //filename :=PAnsiChar(AnsiString(ParamStr(1)));

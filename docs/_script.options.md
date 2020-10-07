@@ -13,8 +13,8 @@ name | return type | description
 ### IO Redirection Example
 
 ```lua
-r = require "Underscript.Runner"
-r.options.redirectio = true
+require "Underscript"
+_script.redirectio = true
 ```
 
 After this, the following functions from your Lua script will be called by Underscript when required and if these have been declared:

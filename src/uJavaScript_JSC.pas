@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, lua, plua, LuaObject, UndImporter, UndConst, UndConsole,
-  CatStrings, JSK.Base, UndHelper_Obj, vcl.dialogs, CatTime;
+  CatStrings, JSK.Base, UndHelper_Obj, vcl.dialogs, CatLogger;
 
 function JavaScriptJSC_Run(L: Plua_State): integer; cdecl;
 
@@ -38,8 +38,6 @@ var
   importer: TUndImporter;
   sw : TCatStopWatch;
 begin
-  if plua_validateargs(L, Result, [LUA_TSTRING]).OK = false then
-    Exit;
   sw := CatStopWatchNew;
   r.success := true;
   UndHelper.LuaState := L;

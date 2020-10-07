@@ -15,7 +15,7 @@ uses
 {$ELSE}
   Classes, SysUtils, Forms,
 {$ENDIF}
-  Lua, pLua, LuaObject, CatStrings, UndHelper_Obj, UndConsole, CatTime,
+  Lua, pLua, LuaObject, CatStrings, UndHelper_Obj, UndConsole, CatLogger,
   Dws2Comp, dws2Exprs, dws2Compiler, dws2htmlfilter, UndImporter, UndConst;
 
 type

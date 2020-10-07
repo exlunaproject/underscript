@@ -16,9 +16,7 @@ library Underscript;
 {$DEFINE UNDER_ACTIVESCRIPT}
 {$DEFINE UNDER_PASCAL}
 {$DEFINE UNDER_PASCAL_CLASSIC}
-{$DEFINE UNDER_JAVASCRIPTCORE}
 {$DEFINE UNDER_JAVASCRIPT_QUICKJS}
-{$DEFINE UNDER_JAVASCRIPT_SPIDERMONKEY}
 {$DEFINE UNDER_PHP}
 {$DEFINE UNDER_PYTHON_ENV}
 {$DEFINE UNDER_RUBY}
@@ -89,23 +87,11 @@ uses
   MethodCallBack in 'thirdparty\python\MethodCallBack.pas',
   VarPyth in 'thirdparty\python\VarPyth.pas',
   {$ENDIF}
-  {$IFDEF UNDER_JAVASCRIPT_SPIDERMONKEY}
-  uJavaScript_SM,
-  js15decl in 'thirdparty\js_spidermonkey\js15decl.pas',
-  jsDbgServer in 'thirdparty\js_spidermonkey\jsDbgServer.pas',
-  jsintf in 'thirdparty\js_spidermonkey\jsintf.pas',
-  NamedPipesImpl in 'thirdparty\js_spidermonkey\NamedPipesImpl.pas',
-  {$ENDIF}
   {$IFDEF UNDER_JAVASCRIPT_QUICKJS}
   uJavaScript_QJS,
   quickjs in 'thirdparty\js_quickjs\quickjs.pas',
   {$ENDIF}
-  {$IFDEF UNDER_JAVASCRIPTCORE}
-  uJavaScript_JSC,  
-  JSK.Base in 'thirdparty\js_javascriptcore\JSK.Base.pas',
-  JSK.API in 'thirdparty\js_javascriptcore\JSK.API.pas',
-  {$ENDIF}
-  CatTime, CatStrings;
+  CatLogger, CatStrings;
 
 
 {$R *.res}
@@ -133,6 +119,20 @@ begin
   end;
 end;
 
+// Warns if JavaScriptCore library is not available
+function JavaScriptJSC_Run(L: plua_State):integer; cdecl;
+begin
+  luaL_error(L, 'Underscript.JSKit library not found.');
+  result := 1;
+end;
+
+// Warns if SpiderMonkey library is not available
+function JavaScriptJSM_Run(L: plua_State):integer; cdecl;
+begin
+  luaL_error(L, 'Underscript.SpiderMonkey library not found.');
+  result := 1;
+end;
+
 function lua_getjavascriptfunc(L: plua_State):integer; cdecl;
 const
    table : array [1..8] of luaL_Reg =
@@ -142,7 +142,7 @@ const
    (name:'node';func:lua_run_nodejs),
    (name:'nodestrict';func:lua_run_nodejs_strict),
    (name:'quick';func:JavaScriptQuick_Run),
-   (name:'spider';func:JavaScriptSM_Run),
+   (name:'spider';func:JavaScriptJSM_Run),
    (name:'v8';func:lua_run_jsv8),
    (name:nil;func:nil)
    );
@@ -288,37 +288,58 @@ end;
 function luaopen_Underscript_Runner(L: plua_State):integer; cdecl;
 begin
  lua_newtable(L);
- plua_SetFieldValue(L,'runext',@lua_getscriptfuncbyfileext,nil);
- plua_SetFieldValue(L,'options',@lua_getoption,@lua_setoption);
+ plua_SetFieldValueRW(L,'runext',@lua_getscriptfuncbyfileext,nil);
+ plua_SetFieldValueRW(L,'options',@lua_getoption,@lua_setoption);
  Result := 1;
+end;
+
+procedure RegisterLanguages(L: plua_State; const Tag:integer);
+begin
+  plua_SetFieldValueRW(L, 'alpha', @lua_getalphascriptfunc, nil, tag);
+  plua_SetFieldValueCF(L, 'luascript', @lua_run_luav51, tag);
+  plua_SetFieldValueCF(L, 'luascript32', @lua_run32_luav51, tag);
+  plua_SetFieldValueCF(L, 'pascalscript', @PascalScript_Run, tag);
+  plua_SetFieldValueCF(L, 'perl', @lua_run_perl, tag);
+  plua_SetFieldValueCF(L, 'python', @lua_run_python, tag);
+  plua_SetFieldValueCF(L, 'php', @lua_run_php, tag);
+  plua_SetFieldValueCF(L, 'java', @lua_run_java, tag);
+  plua_SetFieldValueRW(L, 'javax', @lua_getjavafunc, nil, tag);
+  plua_SetFieldValueCF(L, 'javascript', @JavaScriptQuick_Run, tag);
+  plua_SetFieldValueCF(L, 'jscript', @JavaScript_Run, tag);
+  plua_SetFieldValueRW(L, 'js', @lua_getjavascriptfunc, nil, tag);
+  plua_SetFieldValueRW(L, 'jspp', @lua_getjavascriptppfunc, nil, tag);
+  plua_SetFieldValueRW(L, 'lua', @lua_getluascriptfunc, nil, tag);
+  plua_SetFieldValueRW(L, 'pascal', @lua_getpascalscriptfunc, nil, tag);
+  plua_SetFieldValueCF(L, 'ruby', @lua_run_ruby, tag);
+  plua_SetFieldValueCF(L, 'tcl', @lua_run_tcl, tag);
+  plua_SetFieldValueCF(L, 'vbscript', @VBScript_Run, tag);
+  plua_SetFieldValueRW(L, 'options',@lua_getoption,@lua_setoption, tag);
+end;
+
+procedure RegisterLanguageExtension(L: plua_State;const name:string);
+begin
+  if fileexists(extractfilepath(paramstr(0))+'\Lib\clibs\Underscript\'+name+'.dll') then begin
+   lua_pushstring(L, 'require');
+   lua_rawget(L, LUA_GLOBALSINDEX);
+   lua_pushstring(L, 'Underscript.'+name);
+   lua_pcall(L, 1, 0, 0);
+  end;
 end;
 
 function luaopen_Underscript(L: plua_State): integer; cdecl;
 const
- script_table : array [1..13] of luaL_reg =
+ script_table : array [1..1] of luaL_reg =
  (
- (name:'luascript';func:lua_run_luav51),
- (name:'luascript32'; func: lua_run32_luav51),
- (name:'pascalscript';func:PascalScript_Run),
- (name:'perl';func:lua_run_perl),
- (name:'php';func:lua_run_php),
- (name:'python';func:lua_run_python),
- (name:'java';func: lua_run_java),
- (name:'javascript';func:JavaScriptJSC_Run),
- (name:'jscript';func:JavaScript_Run),
- (name:'ruby';func:lua_run_ruby),
- (name:'tcl';func:lua_run_tcl),
- (name:'vbscript';func:VBScript_Run),
  (name:nil;func:nil)
  );
 begin
   lual_register(L,'_script',@script_table);
-  plua_SetFieldValue(L, 'alpha', @lua_getalphascriptfunc, nil);
-  plua_SetFieldValue(L, 'javax', @lua_getjavafunc, nil);
-  plua_SetFieldValue(L, 'js', @lua_getjavascriptfunc, nil);
-  plua_SetFieldValue(L, 'jspp', @lua_getjavascriptppfunc, nil);
-  plua_SetFieldValue(L, 'lua', @lua_getluascriptfunc, nil);
-  plua_SetFieldValue(L, 'pascal', @lua_getpascalscriptfunc, nil);
+  RegisterLanguages(L, cUndTag_Normal);
+  lual_register(L,'_scriptq',@script_table);
+  RegisterLanguages(L, cUndTag_Quiet);
+  // Loads JavaScript extensions
+  RegisterLanguageExtension(L, 'JSKit');
+  RegisterLanguageExtension(L, 'SpiderMonkey');
   Result := 0;
 end;
 
