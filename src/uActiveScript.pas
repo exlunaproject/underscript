@@ -11,11 +11,11 @@ uses
   Classes, SysUtils, lua, plua, LuaObject, ActiveX, CatJSRunnerAS, UndHelper_AS,
   CatStrings, UndImporter, UndConst, UndConsole, TypInfo, CatLogger;
 
-var
- USEOLDASPARSER: boolean = false;
-
 const
   cDefaultLanguage: string = 'JavaScript';
+
+var
+  USEOLDASPARSER: boolean = false;
 
 type
   TActiveLanguage = (LuaScript, PerlScript, JavaScript, VBScript);
@@ -26,6 +26,18 @@ function VBScript_Run(L: plua_State): integer; cdecl;
 function ActiveScript_Run(L: plua_State): integer; cdecl;
 
 implementation
+
+var
+  ASLOADED: boolean = false;
+
+procedure LoadActiveScriptSupport;
+begin
+  if ASLOADED = true then
+    exit;
+  ASLOADED := true;
+  if fileexists(extractfilepath(paramstr(0))+'\Carbon.conf') = true then
+    USEOLDASPARSER := true;
+end;
 
 function PrepareLanguage(const Lang: string):TUndLanguageInternal;
 begin
@@ -72,6 +84,7 @@ var
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
     Exit;
+  LoadActiveScriptSupport;
   sw := CatStopWatchNew;
   r.success := true;
   CoInitialize(nil);
@@ -89,6 +102,7 @@ begin
   obj := TScarlettActiveScript.create(UndHelper);
   obj.scriptlanguage := cDefaultLanguage; // javascript
   obj.OnScriptError := eh.ScriptError;
+  obj.UseOldEngine := USEOLDASPARSER;
   if Lang <> emptystr then
     obj.scriptlanguage := Lang;
   eh.scriptlanguage := obj.scriptlanguage;
@@ -117,7 +131,6 @@ begin
   end;
   obj.Free;
   eh.Free;
-  CoUninitialize;
   Und_PushScriptResult(L, r, sw);
   result := 1;
 end;

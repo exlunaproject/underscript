@@ -24,7 +24,7 @@ library Underscript;
 
 uses
   SysUtils, TypInfo, Lua, pLua, pLuaTable, CatCSCommand, UndConst, UndScriptExt,
-  UndConsole, SyDLLUtils,
+  UndConsole,
   {$IFDEF UNDER_ACTIVESCRIPT}
   uActiveScript,
   {$ENDIF}
@@ -330,8 +330,6 @@ end;
 
 function luaopen_Underscript_Runner(L: plua_State):integer; cdecl;
 begin
-  if fileexists(extractfilepath(paramstr(0))+'\Carbon.conf') = true then
-    USEOLDASPARSER := true;
  lua_newtable(L);
  plua_SetFieldValueRW(L,'runext',@lua_getscriptfuncbyfileext,nil);
  plua_SetFieldValueRW(L,'options',@lua_getoption,@lua_setoption);
@@ -345,8 +343,6 @@ const
  (name:nil;func:nil)
  );
 begin
-  if fileexists(extractfilepath(paramstr(0))+'\Carbon.conf') = true then
-    USEOLDASPARSER := true;
   lual_register(L,'_script',@script_table);
   RegisterLanguages(L, cUndTag_Normal);
   lual_register(L,'_scriptq',@script_table);
