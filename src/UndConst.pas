@@ -34,6 +34,7 @@ var
   rudImportGlobals: boolean = false;
   rudImportLocals: boolean = true;
   rudRedirectIO: boolean = false;
+  rudHandleErrors: boolean = true;
 
 type
   TUndScriptResult = record
@@ -371,6 +372,7 @@ begin
   rudImportGlobals := plua_GetFieldValueBool(L, idx, 'useglobals', rudImportGlobals);
   rudImportLocals := plua_GetFieldValueBool(L, idx, 'uselocals', rudImportLocals);
   rudRedirectIO := plua_GetFieldValueBool(L, idx, 'redirectio', rudRedirectIO);
+  rudHandleErrors := plua_GetFieldValueBool(L, idx, 'handleerrors', rudHandleErrors);
 end;
 
 function RegisterScriptEngine(L: Plua_State; const LanguageTable, EngineName:string;

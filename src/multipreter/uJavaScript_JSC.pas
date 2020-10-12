@@ -9,7 +9,7 @@ interface
 
 uses
   Classes, SysUtils, lua, plua, LuaObject, UndConst,
-  CatStrings, JSK.Base, UndHelper_Multi, vcl.dialogs, CatTime;
+  CatStrings, JSK.Base, UndHelper_Multi, vcl.dialogs, CatLogger;
 
 procedure JavaScriptJSC_Run(const script:string);
 

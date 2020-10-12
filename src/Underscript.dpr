@@ -256,6 +256,7 @@ end;
 
 type
  TOptionType = (
+  opt_handleerrors,
   opt_modulename,
   opt_usevars,
   opt_useglobals,
@@ -269,6 +270,7 @@ begin
  result:=1;
  s:=lua_tostring(L,2);
  case TOptionType(GetEnumValue(TypeInfo(TOptionType), 'opt_'+lowercase(s))) of
+  opt_handleerrors: lua_pushboolean(L,RudHandleErrors);
   opt_modulename: lua_pushstring(L,rudLibName);
   opt_usevars: lua_pushboolean(L,RudImportVariables);
   opt_uselocals: lua_pushboolean(L,RudImportLocals);
@@ -285,6 +287,7 @@ begin
  result:=1;
  s:=lua_tostring(L,2);
  case TOptionType(GetEnumValue(TypeInfo(TOptionType), 'opt_'+lowercase(s))) of
+  opt_handleerrors: RudHandleErrors := lua_toboolean(L,3);
   opt_modulename: SetCustomModuleName(lua_tostring(L,3));
   opt_usevars: RudImportVariables := lua_toboolean(L,3);
   opt_uselocals: RudImportLocals := lua_toboolean(L,3);

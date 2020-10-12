@@ -47,9 +47,12 @@ begin
   if rudRedirectIO = true then begin
     if plua_tablefunctionexists(L, cUndConsoleLibName, cFuncName) then
       plua_tablecallfunction(L, cUndConsoleLibName, cFuncName, [line, msg]);
-  end else begin
-    uConsoleWriteError(line, msg);
   end;
+  // else begin
+  //  uConsoleWriteError(line, msg);
+  // end;
+  if rudHandleErrors = true then
+    luaL_error(L, '_script:('+inttostr(line)+'): '+msg);
 end;
 
 procedure uConsoleWriteError(line: integer; msg: String);
