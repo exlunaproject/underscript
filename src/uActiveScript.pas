@@ -11,6 +11,9 @@ uses
   Classes, SysUtils, lua, plua, LuaObject, ActiveX, CatJSRunnerAS, UndHelper_AS,
   CatStrings, UndImporter, UndConst, UndConsole, TypInfo, CatLogger;
 
+var
+ USEOLDASPARSER: boolean = false;
+
 const
   cDefaultLanguage: string = 'JavaScript';
 
@@ -84,13 +87,13 @@ begin
   uconsole.LuaState := L; // IMPORTANT!
   UndHelper.LuaState := L; // IMPORTANT!
   obj := TScarlettActiveScript.create(UndHelper);
-  obj.asw.scriptlanguage := cDefaultLanguage; // javascript
+  obj.scriptlanguage := cDefaultLanguage; // javascript
   obj.OnScriptError := eh.ScriptError;
   if Lang <> emptystr then
-    obj.asw.scriptlanguage := Lang;
-  eh.scriptlanguage := obj.asw.scriptlanguage;
-  obj.asw.UseSafeSubset := false;
-  obj.asw.AddNamedItem(rudLibName, uconsole);
+    obj.scriptlanguage := Lang;
+  eh.scriptlanguage := obj.scriptlanguage;
+  obj.UseSafeSubset := false;
+  obj.AddNamedItem(rudLibName, uconsole);
   Script := lua_tostring(L, 1);
   Script := Importer.GetScript(L, Script, langdef).completescript;
   Importer.Free;
@@ -106,7 +109,7 @@ begin
   except
   end;
 
-  if obj.asw_success = false then
+  if obj.scriptsuccess = false then
   begin
     r.success := false;
     r.errormessage := obj.errors.Text;

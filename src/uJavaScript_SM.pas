@@ -37,8 +37,6 @@ var
   importer: TUndImporter;
   sw: TCatStopWatch;
 begin
-  if plua_validateargs(L, result, [LUA_TSTRING]).OK = false then
-    Exit;
   sw := CatStopWatchNew;
   r.success := true;
   eng := TJSEngine.Create;

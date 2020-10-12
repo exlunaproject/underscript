@@ -335,6 +335,12 @@ const
    FuncWriteFormat : crlf + '%l.SetL%c("%k",%k);';
    Options: [uoNoNilImport];
  );
+const
+ langint_V8:TUndLanguageInternal = (
+   FuncReadFormat : '%k = %l.GetL%c("%k");';
+   FuncWriteFormat : crlf + '%l.SetL%c("%k",%k);';
+   Options: [uoNoNilImport];
+ );
 
 procedure uConsoleWriteError(line: integer; msg: String);
 procedure SetCustomModuleName(name:string);

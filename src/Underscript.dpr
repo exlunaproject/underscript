@@ -24,7 +24,7 @@ library Underscript;
 
 uses
   SysUtils, TypInfo, Lua, pLua, pLuaTable, CatCSCommand, UndConst, UndScriptExt,
-  UndConsole,
+  UndConsole, SyDLLUtils,
   {$IFDEF UNDER_ACTIVESCRIPT}
   uActiveScript,
   {$ENDIF}
@@ -133,9 +133,16 @@ begin
   result := 1;
 end;
 
+// Warns if V8 library is not available
+function JavaScriptV8_Run(L: plua_State):integer; cdecl;
+begin
+  luaL_error(L, 'Underscript.v8 library not found.');
+  result := 1;
+end;
+
 function lua_getjavascriptfunc(L: plua_State):integer; cdecl;
 const
-   table : array [1..8] of luaL_Reg =
+   table : array [1..9] of luaL_Reg =
    (
    (name:'jscript';func:JavaScript_Run),
    (name:'core';func:JavaScriptJSC_Run),
@@ -143,7 +150,8 @@ const
    (name:'nodestrict';func:lua_run_nodejs_strict),
    (name:'quick';func:JavaScriptQuick_Run),
    (name:'spider';func:JavaScriptJSM_Run),
-   (name:'v8';func:lua_run_jsv8),
+   (name:'v8';func:JavaScriptV8_Run),
+   (name:'v8ext';func:lua_run_jsv8),
    (name:nil;func:nil)
    );
 begin
@@ -252,6 +260,7 @@ type
   opt_usevars,
   opt_useglobals,
   opt_uselocals,
+  opt_useoldactive,
   opt_redirectio
  );
 function lua_getoption(L: plua_State):integer; cdecl;
@@ -264,6 +273,7 @@ begin
   opt_usevars: lua_pushboolean(L,RudImportVariables);
   opt_uselocals: lua_pushboolean(L,RudImportLocals);
   opt_useglobals: lua_pushboolean(L,RudImportGlobals);
+  opt_useoldactive: lua_pushboolean(L,USEOLDASPARSER);
   opt_redirectio: lua_pushboolean(L,RudRedirectIO);
  else
   result:=0;
@@ -283,14 +293,6 @@ begin
  else
   result:=0;
  end;
-end;
-
-function luaopen_Underscript_Runner(L: plua_State):integer; cdecl;
-begin
- lua_newtable(L);
- plua_SetFieldValueRW(L,'runext',@lua_getscriptfuncbyfileext,nil);
- plua_SetFieldValueRW(L,'options',@lua_getoption,@lua_setoption);
- Result := 1;
 end;
 
 procedure RegisterLanguages(L: plua_State; const Tag:integer);
@@ -326,6 +328,16 @@ begin
   end;
 end;
 
+function luaopen_Underscript_Runner(L: plua_State):integer; cdecl;
+begin
+  if fileexists(extractfilepath(paramstr(0))+'\Carbon.conf') = true then
+    USEOLDASPARSER := true;
+ lua_newtable(L);
+ plua_SetFieldValueRW(L,'runext',@lua_getscriptfuncbyfileext,nil);
+ plua_SetFieldValueRW(L,'options',@lua_getoption,@lua_setoption);
+ Result := 1;
+end;
+
 function luaopen_Underscript(L: plua_State): integer; cdecl;
 const
  script_table : array [1..1] of luaL_reg =
@@ -333,6 +345,8 @@ const
  (name:nil;func:nil)
  );
 begin
+  if fileexists(extractfilepath(paramstr(0))+'\Carbon.conf') = true then
+    USEOLDASPARSER := true;
   lual_register(L,'_script',@script_table);
   RegisterLanguages(L, cUndTag_Normal);
   lual_register(L,'_scriptq',@script_table);
@@ -340,6 +354,7 @@ begin
   // Loads JavaScript extensions
   RegisterLanguageExtension(L, 'JSKit');
   RegisterLanguageExtension(L, 'SpiderMonkey');
+  RegisterLanguageExtension(L, 'v8');
   Result := 0;
 end;
 
