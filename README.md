@@ -85,7 +85,7 @@ _script.javax.bshcore|BeanShell Core Java script|
 **_script.tcl**|TCL script|
 **_script.vbscript**|VBScript (MS Engine)|
 
-###JavaScript
+### JavaScript
 function | language
 --- | ---
 **_script.javascript**|JavaScript using default JS engine (QuickJS), same as _script.js.quick|
@@ -100,7 +100,7 @@ _script.js.v8|Pure V8 engine (built-in extension)
 _script.js.v8ext|Pure V8 engine (external process)
 _script.jspp.tiscript|JavaScript++ (TIScript), a superset of JavaScript
 
-###Pascal
+### Pascal
 function | language
 --- | ---
 **_script.pascal**|DWS Pascal - Standard Script, same as pascalx.script
@@ -110,7 +110,7 @@ _script.pas.prog|RemObjects Pascal - Program Script
 _script.pas.prog|RemObjects Pascal - Function Script
 _script.pas.short|RemObjects Pascal - Short Script
 
-###Lua itself
+### Lua itself
 function | language
 --- | ---
 _script.lua.script|Lua 5.1 (64-bit), same as _script.lua.v51
