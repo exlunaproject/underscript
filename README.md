@@ -32,6 +32,18 @@ test.hello()
 print(test.aloha("Lua"))
 ```
 
+test.js:
+```javascript
+var test = { 
+    hello: function () { 
+        UConsole.WriteLn("Hello World");              
+    },
+    aloha: function (name) { 
+        return "Aloha, "+name+"!";             
+    }            
+} 
+```
+
 ### Run Script
 
 ```lua
