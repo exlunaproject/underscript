@@ -374,7 +374,7 @@ end;
 function luaopen_Underscript_Console(L: plua_State): integer; cdecl;
 begin
   rudRedirectIO := false;
-  luaopen_Underscript(L);
+  result := luaopen_Underscript(L);
 end;
 
 Exports
