@@ -11,7 +11,7 @@ Underscript is a ninja Lua extension library that extends Lua to:
 ### LoL (Lua 32-bit on Lua 64-bit)
 ```lua
 require "luaonlua"
-uuid = require32("uuid") -- imports the uuid library from Lua 32-bit
+uuid = require32("uuid") -- imports the 32-bit uuid.dll
 print(uuid.new())
 m = require32("math") -- imports the math library from Lua 32-bit
 print(m.sqrt(1234))
