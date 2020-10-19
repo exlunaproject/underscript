@@ -1,8 +1,8 @@
 # Underscript Lua Extensions
 
-Underscript is ninja Lua extension library that extends Lua to:
+Underscript is a ninja Lua extension library that extends Lua to:
 
-* **Run a wide variety of scripting languages from within Lua scripts** through the _script function. The script can use the variables from the Lua script as it was part of itself. All kinds of scripting languages are supported, including various versions of Lua itself - allowing to run for example a LuaJIT script from within a standard Lua script. This function is expanding and evolving.
+* **Run a wide variety of scripting languages from within Lua scripts** through the _script function. The script can use the variables from the Lua script as it was part of itself. All kinds of scripting languages are supported, including various versions of Lua itself - allowing to run for example a LuaJIT from within standard Lua. The _script method is expanding and evolving.
 * **Cross-language import** a library through requirex functions (still limited and evolving). This allows for example to require a JavaScript file like it was a Lua script and then use its functions.
 * **Run 32-bit Lua on Lua 64-bit** through the require32 function. This LoL (Lua on Lua) system allows to load and use legacy 32-bit Lua DLLs and libraries from within a 64-bit Lua application (still beta and evolving). 
 
