@@ -2,8 +2,8 @@
 
 You can also run Lua code through the _script method:
 
-* _script.**luascript** (or lua.v51) - runs the code using Lua 5.1 64-bit version as external Lua process
-* _script.**luascript32** - runs the code using Lua 5.1 32-bit version as external Lua process
+* _script.lua.**script** (or lua.v51) - runs the code using Lua 5.1 64-bit version as external Lua process
+* _script.lua.**script32** - runs the code using Lua 5.1 32-bit version as external Lua process
 
 * _script.lua.**v51**, **v52**, **v53** or **v54** - runs the code using specific Lua version as external Lua processes
 * _script.lua.**in** - runs the code within the same Lua thread and process
@@ -17,7 +17,7 @@ You can also run Lua code through the _script method:
 require "Underscript"
 
 -- Prints "Hello World!" in uppercase
-function say(s) _script.luascript
+function say(s) _script.lua.script
  [[
   print(string.upper(s));
  ]]

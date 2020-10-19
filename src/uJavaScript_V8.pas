@@ -8,36 +8,71 @@ unit uJavaScript_V8;
 interface
 
 uses
-  Classes, SysUtils, lua, plua, LuaObject, UndImporter, UndConst, UndConsole,
-  CatStrings, UndHelper_Obj, vcl.dialogs, CatLogger, v8wrapper;
+  Classes, SysUtils, lua, plua, LuaObject, UndImporter, UndConst,
+  UndConsole, CatCSUtils,
+  CatStrings, UndHelper_Obj, CatLogger, v8wrapper;
 
 function JavaScriptV8_Run(L: Plua_State): integer; cdecl;
+function RunJSPersistent(L: Plua_State; const script: string):string;
 
 implementation
 
+var
+  feng : Tv8Engine;
+  fglobal: Iv8Object;
+  ftemplate: Tv8ObjectTemplate;
+  fobj: Iv8Object;
+
+procedure v8_cleanpersistent;
+begin
+  if feng = nil then
+   Exit;
+  // leaving
+  ftemplate.Free;
+  fglobal := nil;
+  fobj := nil;
+  feng.leave;
+  feng.Free;
+end;
+
+function RunJSPersistent(L: Plua_State; const script: string):string;
+begin
+  if feng = nil then begin
+   feng := Tv8Engine.Create; // create engine
+   feng.enter;
+   fglobal := feng.GlobalObject;
+
+   ftemplate := feng.RegisterRttiClass(TUndHelper);
+   fobj := ftemplate.CreateInstance(UndHelper);
+   fglobal.SetObject(rudLibName, fobj);
+  end;
+  UndHelper.LuaState := L;
+  result := feng.eval(script);
+end;
+
 function RunJS(L: Plua_State; const script: string):string;
 var
-  fengine : Tv8Engine;
-  Fv8GlobalObject: Iv8Object;
-  FObjectTemplate2: Tv8ObjectTemplate;
-  FJsAccessableObject: Iv8Object;
+  eng : Tv8Engine;
+  global: Iv8Object;
+  template: Tv8ObjectTemplate;
+  obj: Iv8Object;
 begin
-  FEngine := Tv8Engine.Create; // create engine
-  FEngine.enter;
-  Fv8GlobalObject := FEngine.GlobalObject;
+  eng := Tv8Engine.Create; // create engine
+  eng.enter;
+  global := eng.GlobalObject;
 
-  FObjectTemplate2 := FEngine.RegisterRttiClass(TUndHelper);
-  FJsAccessableObject := FObjectTemplate2.CreateInstance(UndHelper);
-  Fv8GlobalObject.SetObject(rudLibName, FJsAccessableObject);
+  template := eng.RegisterRttiClass(TUndHelper);
+  obj := template.CreateInstance(UndHelper);
+  global.SetObject(rudLibName, obj);
 
-  result := FEngine.eval(script);
+  result := eng.eval(script);
 
   // leaving
-  FObjectTemplate2.Free;
-  Fv8GlobalObject := nil;
-  FJsAccessableObject := nil;
-  FEngine.leave;
-  FEngine.Free;
+  template.Free;
+  global := nil;
+  obj := nil;
+  eng.leave;
+  eng.Free;
 end;
 
 function JavaScriptV8_Run(L: Plua_State): integer; cdecl;
@@ -82,6 +117,7 @@ initialization
   v8_init; // initialize v8 library
 
 finalization
-  v8_cleanup;
+  v8_cleanpersistent;
+  // v8_cleanup; leave clean-up for the engine itself
 
 end.

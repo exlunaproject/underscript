@@ -6,7 +6,7 @@
 require "Underscript"
 
 -- Prints "Hello World!" in uppercase
-function say(s) _script.pascalscript
+function say(s) _script.pascal
  [[
   UConsole.WriteLn(Uppercase(Trim(s)));
  ]]
@@ -20,7 +20,7 @@ say(" Hello World! ")
 ```lua
 require "Underscript"
 
-function printcrc16() _script.pascal.prog
+function printcrc16() _script.pas.prog
  [[
 const DivPol = $1021;
 const Amount = 20000;

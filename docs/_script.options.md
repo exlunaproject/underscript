@@ -5,7 +5,7 @@ The options table can be used to enable or disable library features. The followi
 name | return type | description
 --- | --- | ---
 **modulename** | string | Gets or sets the module name. Default: UConsole
-**redirectio** | boolean | Enables or disables the IO redirection. Disabled by default. When enabled, IO module and functions may be called during a script execution.
+**redirectio** | boolean | Enables or disables the IO redirection. Enabled by default in non-console app. When enabled, IO module and functions may be called during a script execution.
 **handleerrors** | boolean | Enables or disables the use of Lua error handling. Enabled by default. If disabled, luaL_error() will not be called if a script error occurs.
 **usevars** | boolean | Enables or disables the use of Lua variables (local or global). Enabled by default.
 **useglobals** | boolean | Enables or disables the use of global Lua variables. Disabled by default. Requires usevars enabled.

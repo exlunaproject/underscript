@@ -7,6 +7,7 @@ library Underscript;
 
  This library adds to Lua the ability to run code written in the following
  programming languages:
+
  JavaScript, PascalScript, Perl, PHP, Python, Ruby, TCL, VBScript, LuaJIT and
  various versions of Lua itself (5.1 to 5.4)
 }
@@ -91,7 +92,7 @@ uses
   uJavaScript_QJS,
   quickjs in 'thirdparty\js_quickjs\quickjs.pas',
   {$ENDIF}
-  CatLogger, CatStrings;
+  CatLogger, CatStrings, CatCSUtils;
 
 
 {$R *.res}
@@ -171,9 +172,10 @@ end;
 
 function lua_getluascriptfunc(L: plua_State):integer; cdecl;
 const
-   table : array [1..8] of luaL_Reg =
+   table : array [1..9] of luaL_Reg =
    (
-   (name:'current';func:lua_run_luav51),
+   (name:'script';func:lua_run_luav51),
+   (name:'script32';func:lua_run32_luav51),
    (name:'in';func:lua_run_luacode),
    (name:'jit';func:lua_run_luajit),
    (name:'v51';func:lua_run_luav51),
@@ -202,8 +204,8 @@ function lua_getpascalscriptfunc(L: plua_State):integer; cdecl;
 const
    table : array [1..6] of luaL_Reg =
    (
-   (name:'page';func:PascalWebScript_Run),
-   (name:'dws';func:PascalScript_Run),
+   (name:'script';func:PascalScript_Run),
+   (name:'webscript';func:PascalWebScript_Run),
    (name:'prog';func:PascalClassic_Run),
    (name:'func';func:PascalFunction_Run),
    (name:'short';func:PascalFunctionShort_Run),
@@ -216,11 +218,22 @@ end;
 // Experimental interpreters
 function lua_getalphascriptfunc(L: plua_State):integer; cdecl;
 const
-   table : array [1..3] of luaL_Reg =
+   table : array [1..2] of luaL_Reg =
    (
-   (name:'perlactive';func:PerlScript_Run),
  // This will execute the script using a installed Python in your environment
    (name:'pythonenv';func:Python_Run),
+   (name:nil;func:nil)
+   );
+begin
+  result := plua_pushcfunction_fromarray(L, lua_tostring(L,2), table);
+end;
+
+function lua_getperlscriptfunc(L: plua_State):integer; cdecl;
+const
+   table : array [1..3] of luaL_Reg =
+   (
+   (name:'script';func:lua_run_perl),
+   (name:'active';func:PerlScript_Run),
    (name:nil;func:nil)
    );
 begin
@@ -301,10 +314,11 @@ end;
 procedure RegisterLanguages(L: plua_State; const Tag:integer);
 begin
   plua_SetFieldValueRW(L, 'alpha', @lua_getalphascriptfunc, nil, tag);
-  plua_SetFieldValueCF(L, 'luascript', @lua_run_luav51, tag);
-  plua_SetFieldValueCF(L, 'luascript32', @lua_run32_luav51, tag);
-  plua_SetFieldValueCF(L, 'pascalscript', @PascalScript_Run, tag);
+  plua_SetFieldValueRW(L, 'lua', @lua_getluascriptfunc, nil, tag);
+  plua_SetFieldValueCF(L, 'pascal', @PascalScript_Run, tag);
+  plua_SetFieldValueRW(L, 'pas', @lua_getpascalscriptfunc, nil, tag);
   plua_SetFieldValueCF(L, 'perl', @lua_run_perl, tag);
+  plua_SetFieldValueCF(L, 'perlx', @lua_getperlscriptfunc, tag);
   plua_SetFieldValueCF(L, 'python', @lua_run_python, tag);
   plua_SetFieldValueCF(L, 'php', @lua_run_php, tag);
   plua_SetFieldValueCF(L, 'java', @lua_run_java, tag);
@@ -313,8 +327,6 @@ begin
   plua_SetFieldValueCF(L, 'jscript', @JavaScript_Run, tag);
   plua_SetFieldValueRW(L, 'js', @lua_getjavascriptfunc, nil, tag);
   plua_SetFieldValueRW(L, 'jspp', @lua_getjavascriptppfunc, nil, tag);
-  plua_SetFieldValueRW(L, 'lua', @lua_getluascriptfunc, nil, tag);
-  plua_SetFieldValueRW(L, 'pascal', @lua_getpascalscriptfunc, nil, tag);
   plua_SetFieldValueCF(L, 'ruby', @lua_run_ruby, tag);
   plua_SetFieldValueCF(L, 'tcl', @lua_run_tcl, tag);
   plua_SetFieldValueCF(L, 'vbscript', @VBScript_Run, tag);
@@ -346,6 +358,7 @@ const
  (name:nil;func:nil)
  );
 begin
+  lual_register(L,'requirex',@script_table);
   lual_register(L,'_script',@script_table);
   RegisterLanguages(L, cUndTag_Normal);
   lual_register(L,'_scriptq',@script_table);
@@ -357,8 +370,16 @@ begin
   Result := 0;
 end;
 
+// same as luaopen_Underscript but with IO redirect disabled
+function luaopen_Underscript_Console(L: plua_State): integer; cdecl;
+begin
+  rudRedirectIO := false;
+  luaopen_Underscript(L);
+end;
+
 Exports
   luaopen_Underscript,
+  luaopen_Underscript_Console,
   luaopen_Underscript_Runner;
 
 begin

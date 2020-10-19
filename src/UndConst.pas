@@ -33,7 +33,7 @@ var
   rudImportVariables: boolean = true;
   rudImportGlobals: boolean = false;
   rudImportLocals: boolean = true;
-  rudRedirectIO: boolean = false;
+  rudRedirectIO: boolean = true;
   rudHandleErrors: boolean = true;
 
 type
@@ -348,6 +348,8 @@ procedure SetCustomModuleName(name:string);
 procedure ReadScriptSettings(L: Plua_State);
 function RegisterScriptEngine(L: Plua_State; const LanguageTable, EngineName:string;
   Func:lua_CFunction):integer; cdecl;
+function RegisterCrossRequire(L: Plua_State; const LanguageName:string;
+  Func:lua_CFunction):integer; cdecl;
 
 
 implementation
@@ -393,6 +395,25 @@ begin
    lua_pushcfunction(L, Func);
    lua_rawset(L, idx);
   end;
+end;
+
+function RegisterCrossRequire(L: Plua_State; const LanguageName:string;
+  Func:lua_CFunction):integer; cdecl;
+var
+  idx:integer;
+begin
+  result := 0;
+  lua_getglobal(L, 'tostring');
+  lua_pushstring(L, 'requirex');
+  lua_rawget(L, LUA_GLOBALSINDEX);
+  idx := lua_gettop(L);
+  if lua_istable(L, lua_gettop(L)) then begin
+   plua_setfieldvalueCF(L, LanguageName, func);
+   //lua_pushstring(L, EngineName);
+   //lua_pushcfunction(L, Func);
+   //lua_rawset(L, idx);
+  end;
+
 end;
 
 procedure SetCustomModuleName(name:string);
