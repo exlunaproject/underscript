@@ -8,8 +8,18 @@ library Underscript;
  This library adds to Lua the ability to run code written in the following
  programming languages:
 
- JavaScript, PascalScript, Perl, PHP, Python, Ruby, TCL, TypeScript, VBScript,
- LuaJIT and various versions of Lua itself (5.1 to 5.4)
+ - CSharp
+ - JavaScript
+ - PascalScript
+ - Perl
+ - PHP
+ - Python
+ - Ruby
+ - TCL
+ - TypeScript
+ - VBScript
+ - LuaJIT
+ - Various versions of Lua itself (5.1 to 5.4)
 }
 
 {$I Underscript.inc}
@@ -245,8 +255,9 @@ end;
 function lua_getscriptfuncbyfileext(L: plua_State):integer; cdecl;
 var ext:string;
 const
-   table : array [1..16] of luaL_Reg =
+   table : array [1..17] of luaL_Reg =
    (
+   (name:'cs';func:lua_run_csharp),
    (name:'lua';func:lua_run_luav51),
    (name:'java';func:lua_run_java),
    (name:'js';func:JavaScript_Run),
@@ -318,6 +329,7 @@ end;
 procedure RegisterLanguages(L: plua_State; const Tag:integer);
 begin
   plua_SetFieldValueRW(L, 'alpha', @lua_getalphascriptfunc, nil, tag);
+  plua_SetFieldValueCF(L, 'csharp', @lua_run_csharp, tag);
   plua_SetFieldValueRW(L, 'lua', @lua_getluascriptfunc, nil, tag);
   plua_SetFieldValueCF(L, 'pascal', @PascalScript_Run, tag);
   plua_SetFieldValueRW(L, 'pas', @lua_getpascalscriptfunc, nil, tag);

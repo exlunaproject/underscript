@@ -32,6 +32,7 @@ function lua_run_python(L: plua_State):integer; cdecl;
 function lua_run_tiscript(L: plua_State):integer; cdecl;
 function lua_run_tcl(L: plua_State):integer; cdecl;
 function lua_run_typescript_deno(L: plua_State):integer; cdecl;
+function lua_run_csharp(L: plua_State):integer; cdecl;
 
 function lua_run32_luav51(L: plua_State):integer; cdecl;
 
@@ -196,6 +197,12 @@ end;
 // ************************************************************************** //
 // Legacy 32-bit Interpreters
 // ************************************************************************** //
+
+function lua_run_csharp(L: plua_State):integer; cdecl;
+begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), langdef_CSharp);
+end;
 
 function lua_run32_luav51(L: plua_State):integer; cdecl;
 var lang:TUndLanguageExternal;

@@ -55,6 +55,15 @@ function RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal):i
 
 implementation
 
+function ShortenTypeNames(const t:string):string;
+begin
+   result := t;
+   if result = 'boolean' then
+     result := 'bool';
+   if result = 'integer' then
+     result := 'int';
+end;
+
 function RunExternalScript(L: Plua_State; S:string; Lang:TUndLanguageExternal):integer;
 var
   imp:TUndExternal;
@@ -114,14 +123,17 @@ end;
 
 function TUndExternal.GetFormatedImport(const s: string;v:TUndLuaVariable): string;
 var
- getter:string;
+ getter, typestr:string;
 begin
+  typestr := v.luatypestr;
+  if uoShortTypeName in fLanguage.Options then
+   typestr := ShortenTypeNames(typestr);
   getter := fLanguage.VarReadFormat;
   getter := replacestr(getter, '%k', v.name);
   result := s;
   result := replacestr(result, '%p', cUnderSetPrefix);
   result := replacestr(result, '%k', v.name);
-  result := replacestr(result, '%t', v.LuaTypeStr);
+  result := replacestr(result, '%t', typestr);
   case v.luatype of
   LUA_TNIL: v.value := fLanguage.NilKeyword;
   LUA_TSTRING: begin

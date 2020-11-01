@@ -54,7 +54,7 @@ type
 
 type
   TUndStringEncodeFormat = (usfBase64, usfHex);
-  TUndOptions = (uoTimeout, uoNoNilImport);
+  TUndOptions = (uoTimeout, uoNoNilImport, uoShortTypeName);
   TUndOptionSet = set of TUndOptions;
 
 type
@@ -293,6 +293,20 @@ const
    StringDecoder: 'Base64.decode(%s)';
    FormatScript: 'import System;import System.Encoding; %s';
    NilKeyword: 'null';
+ );
+
+const
+ langdef_CSharp: TUndLanguageExternal = (
+   Command: '%u32\scriptcs\scriptcs.exe';
+   FileExt: '.cs';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: '%t %k = %v;';
+   FuncWriteFormat: ';Console.WriteLine("\n%pt=%t,n=%k,v="+%g);';
+   StringEncoder: 'Convert.ToBase64String(Encoding.UTF8.GetBytes(%s))';
+   StringDecoder: 'Encoding.UTF8.GetString(Convert.FromBase64String(%s))';
+   NilKeyword: 'null';
+   Options: [uoShortTypeName];
  );
 
 const

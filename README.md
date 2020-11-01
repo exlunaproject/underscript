@@ -79,10 +79,11 @@ automatically made accessible from within the code just like if they were part o
 
 ## Available Languages and Engines
 
-Currently JavaScript, Java, LuaJIT, Pascal, Perl, PHP, Python, Ruby, TCL, TypeScript, VBScript and various versions of Lua itself are supported.
+Currently C#, JavaScript, Java, LuaJIT, Pascal, Perl, PHP, Python, Ruby, TCL, TypeScript, VBScript and various versions of Lua itself are supported.
 
 function | language
 --- | ---
+**_script.csharp**|C# (.NET) script
 **_script.pascal**|DWS Pascal - Standard Script, same as pascalx.script (see table below)
 **_script.perl**|Perl (Strawberry Perl), same as perlx.script
 _script.perlx.script|Perl (Strawberry Perl)
@@ -174,6 +175,7 @@ PascalScript|http://www.RemObjects.com/
 Python|http://python.org/
 QuickJS|https://bellard.org/quickjs/
 Ruby|http://www.ruby-lang.org
+ScriptCS|http://scriptcs.net/
 SpiderMonkey|https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey
 Strawberry Perl|http://strawberryperl.com/
 TIScript|https://sciter.com/developers/for-web-programmers/tiscript-vs-javascript/
