@@ -79,7 +79,7 @@ automatically made accessible from within the code just like if they were part o
 
 ## Available Languages and Engines
 
-Currently JavaScript, Java, LuaJIT, Pascal, Perl, PHP, Python, Ruby, TCL, VBScript and various versions of Lua itself are supported.
+Currently JavaScript, Java, LuaJIT, Pascal, Perl, PHP, Python, Ruby, TCL, TypeScript, VBScript and various versions of Lua itself are supported.
 
 function | language
 --- | ---
@@ -96,6 +96,7 @@ _script.javax.bshcore|BeanShell Core Java script|
 **_script.ruby**|Ruby script|
 **_script.tcl**|TCL script|
 **_script.vbscript**|VBScript (MS Engine)|
+**_script.typescript**|TypeScript using default TS engine (Deno), same as _script.jspp.tsdeno (see table below)|
 
 ### JavaScript
 function | language
@@ -110,7 +111,14 @@ _script.js.quick|QuickJS engine
 _script.js.spider|Mozilla's SpiderMonkey engine
 _script.js.v8|Pure V8 engine (built-in extension)
 _script.js.v8ext|Pure V8 engine (external process)
-_script.jspp.tiscript|JavaScript++ (TIScript), a superset of JavaScript
+
+### TypeScript & Other JS supersets
+function | language
+--- | ---
+**_script.typescript**|TypeScript using default TS engine (Deno), same as _script.jspp.tsdeno|
+_script.jspp.script|JS++ (by Onux)
+_script.jspp.tiscript|TIScript (by Terra Informatica)
+_script.jspp.tsdeno|TypeScript (Deno))
 
 ### Pascal
 function | language
@@ -149,14 +157,31 @@ Compiled binaries for Windows can be downloaded from the links below.
 
 * [Underscript 64-bit](https://www.syhunt.com/pub/downloads/underscript-2.0.0.exe) (preview)
 
-Third-party libraries already included:
-* PHP, freely available from http://www.php.net/
-* Ruby, freely available from http://www.ruby-lang.org
-* PascalScript, freely available from http://www.RemObjects.com/
+Third-party, freely available libraries already included:
+
+function | Official URL
+--- | ---
+BeanShell|http://www.beanshell.org/
+Deno|https://github.com/denoland/deno
+DWScript|https://bitbucket.org/egrange/dwscript
+Lua|https://www.lua.org/
+LuaJIT|https://luajit.org/
+PHP|http://www.php.net/
+JavaScriptCore|https://developer.apple.com/documentation/javascriptcore
+JS++|https://www.onux.com/jspp/
+Node.js|https://nodejs.org/
+PascalScript|http://www.RemObjects.com/
+Python|http://python.org/
+QuickJS|https://bellard.org/quickjs/
+Ruby|http://www.ruby-lang.org
+SpiderMonkey|https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey
+Strawberry Perl|http://strawberryperl.com/
+TIScript|https://sciter.com/developers/for-web-programmers/tiscript-vs-javascript/
+V8|https://github.com/v8/v8
 
 Not included - must be downloaded separately:
-* ActivePerl (optional for running Perl scripts) available from http://www.activestate.com/activeperl
-* Python (optional for running Python scripts) freely available from http://python.org/
+* ActivePerl (optional for running active Perl scripts) available from http://www.activestate.com/activeperl
+* Java (needed for running Java scripts through BeanShell)
 
 ## Compiling
 

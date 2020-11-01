@@ -237,7 +237,7 @@ const
 
 const
  langdef_TIScript: TUndLanguageExternal = (
-   Command: '%u\tiscript\tiscript.exe';
+   Command: '%u\jspp\tiscript.exe';
    FileExt: '.tis';
    StringFormat: '"%s"';
    VarReadFormat: '%k';
@@ -263,6 +263,36 @@ const
    FormatScript: '%s';
    NilKeyword: '""';
    StringEncodeFormat: usfHex;
+ );
+
+const
+ langdef_TypeScript_Deno: TUndLanguageExternal = (
+   Command: '%u\jspp\deno.exe';
+   Params: 'run %f';
+   FileExt: '.ts';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: 'var %k = %v;';
+   FuncWriteFormat: ';console.log("\n%pt=%t,n=%k,v="+%g);';
+   StringEncoder: 'btoa(%s)';
+   StringDecoder: 'atob(%s)';
+   FormatScript: '%s';
+   NilKeyword: 'null';
+ );
+
+const
+ langdef_JSPP_Onux: TUndLanguageExternal = (
+   Command: '%u\jspp\js++.exe';
+   Params: '-e %f';
+   FileExt: '.jspp';
+   StringFormat: '"%s"';
+   VarReadFormat: '%k';
+   FuncReadFormat: 'var %k = %v;';
+   FuncWriteFormat: ';Console.log("\n%pt=%t,n=%k,v="+%g);';
+   StringEncoder: 'Base64.encode(%s)';
+   StringDecoder: 'Base64.decode(%s)';
+   FormatScript: 'import System;import System.Encoding; %s';
+   NilKeyword: 'null';
  );
 
 const

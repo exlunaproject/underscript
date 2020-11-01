@@ -8,8 +8,8 @@ library Underscript;
  This library adds to Lua the ability to run code written in the following
  programming languages:
 
- JavaScript, PascalScript, Perl, PHP, Python, Ruby, TCL, VBScript, LuaJIT and
- various versions of Lua itself (5.1 to 5.4)
+ JavaScript, PascalScript, Perl, PHP, Python, Ruby, TCL, TypeScript, VBScript,
+ LuaJIT and various versions of Lua itself (5.1 to 5.4)
 }
 
 {$I Underscript.inc}
@@ -161,9 +161,11 @@ end;
 
 function lua_getjavascriptppfunc(L: plua_State):integer; cdecl;
 const
-   table : array [1..2] of luaL_Reg =
+   table : array [1..4] of luaL_Reg =
    (
+   (name:'script';func:lua_run_jspp_onux),
    (name:'tiscript';func:lua_run_tiscript),
+   (name:'tsdeno';func:lua_run_typescript_deno),
    (name:nil;func:nil)
    );
 begin
@@ -243,11 +245,12 @@ end;
 function lua_getscriptfuncbyfileext(L: plua_State):integer; cdecl;
 var ext:string;
 const
-   table : array [1..14] of luaL_Reg =
+   table : array [1..16] of luaL_Reg =
    (
    (name:'lua';func:lua_run_luav51),
    (name:'java';func:lua_run_java),
    (name:'js';func:JavaScript_Run),
+   (name:'jspp';func:lua_run_jspp_onux),
    (name:'vbs';func:VBScript_Run),
    (name:'dws';func:PascalWebScript_Run),
    (name:'dpr';func:PascalClassic_Run),
@@ -256,6 +259,7 @@ const
    (name:'py';func:lua_run_python),
    (name:'pl';func:lua_run_perl),
    (name:'rb';func:lua_run_ruby),
+   (name:'ts';func:lua_run_typescript_deno),
    (name:'tis';func:lua_run_tiscript),
    (name:'tcl';func:lua_run_tcl),
    (name:nil;func:nil)
@@ -329,6 +333,7 @@ begin
   plua_SetFieldValueRW(L, 'jspp', @lua_getjavascriptppfunc, nil, tag);
   plua_SetFieldValueCF(L, 'ruby', @lua_run_ruby, tag);
   plua_SetFieldValueCF(L, 'tcl', @lua_run_tcl, tag);
+  plua_SetFieldValueCF(L, 'typescript', @lua_run_typescript_deno, tag);
   plua_SetFieldValueCF(L, 'vbscript', @VBScript_Run, tag);
   plua_SetFieldValueRW(L, 'options',@lua_getoption,@lua_setoption, tag);
 end;

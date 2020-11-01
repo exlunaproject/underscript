@@ -23,6 +23,7 @@ function lua_run_javabshcore(L: plua_State):integer; cdecl;
 function lua_run_jsv8(L: plua_State):integer; cdecl;
 function lua_run_jsspidermonkey(L: plua_State):integer; cdecl;
 function lua_run_js_javascriptcore(L: plua_State):integer; cdecl;
+function lua_run_jspp_onux(L: plua_State):integer; cdecl;
 function lua_run_quickjs(L: plua_State):integer; cdecl;
 function lua_run_php(L: plua_State):integer; cdecl;
 function lua_run_ruby(L: plua_State):integer; cdecl;
@@ -30,6 +31,7 @@ function lua_run_perl(L: plua_State):integer; cdecl;
 function lua_run_python(L: plua_State):integer; cdecl;
 function lua_run_tiscript(L: plua_State):integer; cdecl;
 function lua_run_tcl(L: plua_State):integer; cdecl;
+function lua_run_typescript_deno(L: plua_State):integer; cdecl;
 
 function lua_run32_luav51(L: plua_State):integer; cdecl;
 
@@ -177,6 +179,18 @@ function lua_run_tcl(L: plua_State):integer; cdecl;
 begin
   if plua_validateargs(L, result, [LUA_TSTRING]).OK then
     RunExternalScript(L, lua_tostring(L,1), langdef_TCL);
+end;
+
+function lua_run_typescript_deno(L: plua_State):integer; cdecl;
+begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), langdef_TypeScript_Deno);
+end;
+
+function lua_run_jspp_onux(L: plua_State):integer; cdecl;
+begin
+  if plua_validateargs(L, result, [LUA_TSTRING]).OK then
+    RunExternalScript(L, lua_tostring(L,1), langdef_JSPP_Onux);
 end;
 
 // ************************************************************************** //
