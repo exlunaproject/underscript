@@ -138,10 +138,10 @@ _script.lua.script|Lua 5.1 (64-bit), same as _script.lua.v51
 _script.lua.script32|Lua 5.1 (32-bit)
 _script.lua.in|Lua 5.1 (built-in 64-bit Lua, same Lua state)
 _script.lua.jit|LuaJIT 5.1 (64-bit)
-_script.lua.v51|LuaJIT 5.1 (64-bit)
-_script.lua.v52|LuaJIT 5.2 (64-bit)
-_script.lua.v53|LuaJIT 5.3 (64-bit)
-_script.lua.v54|LuaJIT 5.4 (64-bit)
+_script.lua.v51|Lua 5.1 (64-bit)
+_script.lua.v52|Lua 5.2 (64-bit)
+_script.lua.v53|Lua 5.3 (64-bit)
+_script.lua.v54|Lua 5.4 (64-bit)
 
 **Case Sensitiveness in Pascal and VBScript** - PascalScript and VBScript are case-insensitive. When using them avoid using Lua variables with the same name but different case.
 
