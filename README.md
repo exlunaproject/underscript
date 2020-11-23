@@ -156,7 +156,7 @@ _script.lua.v54|Lua 5.4 (64-bit)
 
 Compiled binaries for Windows can be downloaded from the links below.
 
-* [Underscript 64-bit](https://www.syhunt.com/pub/downloads/underscript-2.0.0.exe) (preview)
+* http://www.exluna.org/
 
 Third-party, freely available libraries already included:
 
